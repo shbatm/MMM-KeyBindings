@@ -7,25 +7,14 @@
 
 var NodeHelper = require("node_helper");
 var url = require("url");
-const spawn = require('child_process').spawn;
+// const spawn = require('child_process').spawn;
 
 
 module.exports = NodeHelper.create({
 
-	// Override socketNotificationReceived method.
-
-	/* socketNotificationReceived(notification, payload)
-	 * This method is called when a socket notification arrives.
-	 *
-	 * argument notification string - The identifier of the noitication.
-	 * argument payload mixed - The payload of the notification.
-	 */
-	socketNotificationReceived: function(notification, payload) {
-		// console.log("Working notification system. Notification:", notification, "payload: ", payload);
-	},
-
 	start: function() {
 		var self = this;
+
 		// Basic URL Interface to accept push notifications formatted like
 		// http://localhost:8080/MMM-KeyBindings/notify?notification=TITLE&payload=JSONstringifiedSTRING
 		this.expressApp.get("/" + this.name + "/notify", (req, res) => {
@@ -38,13 +27,11 @@ module.exports = NodeHelper.create({
 			// Oh well, but whatever...
 			}
 
-			if (typeof payload === 'undefined') {
+			if (typeof payload === "undefined") {
 				payload = [];
 			}
 			this.sendSocketNotification(notification, payload);
 			res.sendStatus(200);
-			// console.log('REQUEST RECEIVED');
-			// res.send(values);
 		});
 
 		// Start the Python Daemon to capture input from FireTV Remote via Bluetooth
@@ -53,7 +40,22 @@ module.exports = NodeHelper.create({
 		// correct handler to use.  You can also use `evtest /dev/input/event0` to monitor the output.
 		// Note: to stop capturing input without shutting down the mirror, run the following from
 		// a shell prompt: `python ~/MagicMirror/modules/MMM-KeyBindings/daemon.py stop`
-		var daemon = spawn('python',['/home/pi/MagicMirror/modules/MMM-KeyBindings/daemon.pydaemon.py', 'start']);
+		//var daemon = spawn("python",["/home/pi/MagicMirror/modules/MMM-KeyBindings/daemon.pydaemon.py", "start"]);
 	},
+
+
+	// TODO : Handle POWERON and POWEROFF Callbacks (should probably be moved to another module)
+		// const exec = require("child_process").exec;
+		// const os = require("os");
+		// if (query.action === "MONITORON")
+		// {
+		// 	exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", opts, function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr, res); });
+		// 	return true;
+		// }
+		// if (query.action === "MONITOROFF")
+		// {
+		// 	exec("tvservice -o", opts, function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr, res); });
+		// 	return true;
+		// }
 
 });

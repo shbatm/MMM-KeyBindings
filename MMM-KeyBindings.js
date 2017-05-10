@@ -8,38 +8,31 @@
  */
 
 Module.register("MMM-KeyBindings", {
-	defaults: {
-		keys: ['ArrowDown','ArrowLeft','ArrowRight','ArrowUp','Enter']
-	},
+	// defaults: {
+	// 	enabledKeyStates: ['KEY_DOWN'] // Options are 'KEY_UP', 'KEY_DOWN', 'KEY_HOLD'
+	// },
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
 
-	start: function() {
-		var self = this;
+	// start: function() {
+	// 	var self = this;
+	// 	// Nothing to do...
+	// },
 
-		this.addKeyboardEventListeners();
-	},
-
-	addKeyboardEventListeners: function() {
-		document.addEventListener('keydown', (event) => {
-		  const keyName = event.key;
-		  if (event.preventDefault) {
-		  	event.preventDefault();
-		  } else {
-		  	event.returnValue = false;
-		  }
-		  console.log(keyName);
-		  this.sendNotification("KEYPRESS", { 'keyName':keyName, 'keyState':'KEY_UP' });
-		}, false);
-
-		this.sendSocketNotification("MMM-KeyBindings-KEYPRESS_BINDINGS_ADDED", "keypress");
-	},
 
 	// socketNotificationReceived from helper
 	socketNotificationReceived: function (notification, payload) {
 		console.log("Working notification system. Notification:", notification, "payload: ", payload);
-		if(notification === "MMM-KeyBindings-KEYPRESS_BINDINGS_ADDED") {
-			console.log("Notification Received");
-		}
 	},
+		// if (notification === "KEYPRESS") {
+		// 	console.log("KEYPRESS EVENT");
+		// 	if (typeof payload != "undefined") {
+		// 		console.log(self.config.enabledKeyStates);
+		// 		if (self.config.enabledKeyStates.indexOf(payload.KeyState) > 0) {
+		// 			this.sendNotification('KEYPRESS', payload);
+		// 			console.log("Notification:", notification, "payload: ", payload);
+		// 		}
+		// 	}
+		// }
+
 });
