@@ -15,6 +15,8 @@ module.exports = NodeHelper.create({
 	start: function() {
 		var self = this;
 
+		console.log("MMM-KeyBindings helper has started...");
+
 		// Basic URL Interface to accept push notifications formatted like
 		// http://localhost:8080/MMM-KeyBindings/notify?notification=TITLE&payload=JSONstringifiedSTRING
 		this.expressApp.get("/" + this.name + "/notify", (req, res) => {
@@ -40,7 +42,7 @@ module.exports = NodeHelper.create({
 		// correct handler to use.  You can also use `evtest /dev/input/event0` to monitor the output.
 		// Note: to stop capturing input without shutting down the mirror, run the following from
 		// a shell prompt: `python ~/MagicMirror/modules/MMM-KeyBindings/daemon.py stop`
-		//var daemon = spawn("python",["/home/pi/MagicMirror/modules/MMM-KeyBindings/daemon.pydaemon.py", "start"]);
+		var daemon = spawn("python",["/home/pi/MagicMirror/modules/MMM-KeyBindings/daemon.py", "start"]);
 	},
 
 
