@@ -9,52 +9,35 @@
 
 Module.register("MMM-KeyBindings", {
 	defaults: {
-		updateInterval: 60000,
-		retryDelay: 5000
+		keys: ['ArrowDown','ArrowLeft','ArrowRight','ArrowUp','Enter']
 	},
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
 
 	start: function() {
 		var self = this;
-		var dataRequest = null;
-		var dataNotification = null;
-
-		//Flag for check if module is loaded
-		this.loaded = false;
 
 		this.addKeyboardEventListeners();
-
-		this.loaded = true;
 	},
-
 
 	addKeyboardEventListeners: function() {
-		document.addEventListener('keypress', (event) => {
+		document.addEventListener('keydown', (event) => {
 		  const keyName = event.key;
-
+		  if (event.preventDefault) {
+		  	event.preventDefault();
+		  } else {
+		  	event.returnValue = false;
+		  }
 		  console.log(keyName);
-
-		  // As the user release the Ctrl key, the key is no longer active.
-		  // So event.ctrlKey is false.
-		  // if (keyName === 'Control') {
-		  //   alert('Control key was released');
-		  // }
+		  this.sendNotification("KEYPRESS", { 'keyName':keyName, 'keyState':'KEY_UP' });
 		}, false);
 
-		this.sendSocketNotification("MMM-KeyBindings-KEYPRESS_BINDINGS_ADDED", data);
-	},
-
-	getDom: function() {
-		var self = this;
-
-		// create element wrapper for show into the module
-		var wrapper = document.createElement("div");
-		return wrapper;
+		this.sendSocketNotification("MMM-KeyBindings-KEYPRESS_BINDINGS_ADDED", "keypress");
 	},
 
 	// socketNotificationReceived from helper
 	socketNotificationReceived: function (notification, payload) {
+		console.log("Working notification system. Notification:", notification, "payload: ", payload);
 		if(notification === "MMM-KeyBindings-KEYPRESS_BINDINGS_ADDED") {
 			console.log("Notification Received");
 		}
