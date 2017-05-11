@@ -162,11 +162,12 @@ class Daemon(object):
         raise NotImplementedError
 
 class InputDeviceDispatcher(file_dispatcher):
-	_pendingKeyPress = None
+    _pendingKeyPress = None
 
     def __init__(self, device, args):
         self.device = device
         self.args = args
+        self._pendingKeyPress = None
         file_dispatcher.__init__(self, device)
 
     def recv(self, ign=None):
@@ -175,39 +176,41 @@ class InputDeviceDispatcher(file_dispatcher):
     def handle_read(self):
         for event in self.recv():
             if event.type == evdev.ecodes.EV_KEY:
-		        keyStateName = None
-		        keyPressName = None
-		        keyPressDuration = 0.0
+                keyStateName = None
+                keyPressName = None
+                keyPressDuration = 0.0
                 kev = evdev.events.KeyEvent(event)
-
+                
                 if kev.keystate == kev.key_up:
                     keyStateName = 'KEY_UP'
-                    if _pendingKeyPress != None and _pendingKeyPress.keycode == kev.keycode:
-                    	keyPressDuration = kev.event.timestamp() - _pendingKeyPress.event.timestamp()
-                    	keyPressName = "KEY_LONGPRESSED" if (keyPressDuration >= self.args.lp_threshold) else "KEY_PRESSED"
-                    _pendingKeyPress = None 	# Clear the pending key, a full keypress has occurred or something else was pressed
+                    if self._pendingKeyPress != None and self._pendingKeyPress.keycode == kev.keycode:
+                        keyPressDuration = kev.event.timestamp() - self._pendingKeyPress.event.timestamp()
+                        keyPressName = "KEY_LONGPRESSED" if (keyPressDuration >= self.args.lp_threshold) else "KEY_PRESSED"
+                    self._pendingKeyPress = None     # Clear the pending key, a full keypress has occurred or something else was pressed
                 elif kev.keystate == kev.key_down:
                     keyStateName = 'KEY_DOWN'
-                    _pendingKeyPress = kev 		# Store copy of KeyEvent to calculate duration
+                    self._pendingKeyPress = kev      # Store copy of KeyEvent to calculate duration
                 elif kev.keystate == kev.key_hold:
                     keyStateName = 'KEY_HOLD'
-                    if _pendingKeyPress != None and _pendingKeyPress.keycode == kev.keycode:
-                    	keyPressDuration = kev.event.timestamp() - _pendingKeyPress.event.timestamp()
+                    if self._pendingKeyPress != None and self._pendingKeyPress.keycode == kev.keycode:
+                        keyPressDuration = kev.event.timestamp() - self._pendingKeyPress.event.timestamp()
                     else:
-                    	_pendingKeyPress = None 	# Something happened, a different key was pressed
+                        self._pendingKeyPress = None     # Something happened, a different key was pressed
                 else:
                     keyStateName = 'KEY_UNKNOWN'
-
+                    
                 if self.args.raw_mode:  # Raw mode enabled, send everything
-                	kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': keyPressDuration})
-                	payload = {'notification':'KEYPRESS','payload':kev_json}
-                	r = requests.get(self.args.server_url, params=payload)
-                	# print(kev.keycode + " " + str(kev.keystate))
-
+                    kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': keyPressDuration})
+                    payload = {'notification':'KEYPRESS','payload':kev_json}
+                    r = requests.get(self.args.server_url, params=payload)
+                    print(kev.keycode + " " + str(kev.keystate))
+                    
                 if keyPressName != None:
-                	kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyPressName, 'Duration': keyPressDuration})
-                	payload = {'notification':'KEYPRESS','payload':kev_json}
-                	r = requests.get(self.args.server_url, params=payload)
+                    kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyPressName, 'Duration': keyPressDuration})
+                    payload = {'notification':'KEYPRESS','payload':kev_json}
+                    r = requests.get(self.args.server_url, params=payload)
+                    print("%s: %s, duration %.2f" % (kev.keycode, keyPressName, keyPressDuration))
+                    
 
         
         
@@ -229,45 +232,45 @@ def main():
         description='Runs a daemon which captures InputEvents from a device using evdev',
         epilog="That's all folks"
     )
-
+    
     parser.add_argument('operation',
                     metavar='OPERATION',
                     type=str,
                     help='Operation with daemon. Accepts any of these values: start, stop, restart, status',
                     choices=['start', 'stop', 'restart', 'status'])
-
+    
     parser.add_argument('-e','--event',
-    				metavar='EVENTPATH',
-    				type=str,
-    				help='Path to the evdev event handler, e.g. /dev/input/event0',
-    				default='/dev/input/event0',
-    				dest='event_path')
-
+                    metavar='EVENTPATH',
+                    type=str,
+                    help='Path to the evdev event handler, e.g. /dev/input/event0',
+                    default='/dev/input/event0',
+                    dest='event_path')
+    
     parser.add_argument('-n','--no-grab',
-    				metavar='NO_GRAB',
-    				help='By default, this script grabs all inputs from the device. Use -n to disable',
-    				action='store_false',
-    				dest='allow_grab')
-
+                    help='''By default, this script grabs all inputs from the device, which will block
+                            any commands from being passed natively. Use -n to disable''',
+                    action='store_false',
+                    dest='allow_grab')
+    
     parser.add_argument('-r','--raw',
-    				metavar='RAW',
-    				help='Enables raw mode to send individual KEY_UP, KEY_DOWN, KEY_HOLD events instead of just KEY_PRESSED and KEY_LONGPRESSED.',
-    				action='store_true',
-    				dest='raw_mode')
-
+                    help='''Enables raw mode to send individual KEY_UP, KEY_DOWN, 
+                            KEY_HOLD events instead of just KEY_PRESSED and KEY_LONGPRESSED.''',
+                    action='store_true',
+                    dest='raw_mode')
+    
     parser.add_argument('-l','--long-press-time',
-    				metavar='LONG PRESS TIME',
-    				help='Duration threshold between KEY_PRESSED and KEY_LONGPRESSED in seconds (as float). Default is 1.0s',
-    				type=float,
-    				dest='lp_threshold',
-    				default=1.0)
-
+                    metavar='TIME',
+                    help='Duration threshold between KEY_PRESSED and KEY_LONGPRESSED in seconds (as float). Default is 1.0s',
+                    type=float,
+                    dest='lp_threshold',
+                    default=1.0)
+    
     parser.add_argument('-s','--server',
-    				metavar='SERVER',
-    				type=str,
-    				help='Server URL to push events.',
-    				default='http://localhost:8080/MMM-KeyBindings/notify',
-    				dest='server_url')    
+                    metavar='SERVER',
+                    type=str,
+                    help='Server URL to push events.',
+                    default='http://localhost:8080/MMM-KeyBindings/notify',
+                    dest='server_url')    
 
     args = parser.parse_args()
     operation = args.operation
@@ -276,33 +279,33 @@ def main():
     app_name = os.path.splitext(os.path.basename(__file__))[0]
     script_path = os.path.dirname(os.path.abspath(__file__))
     pid_path = script_path + '/' + app_name + '.pid'
-    daemon = MyDaemon(pid_path, args=args)
+    daemon = MyDaemon(pid_path, args=args, stdout='/dev/stdout', stderr='/dev/stderr')  # FOR DEBUGGING: Add `, stdout='/dev/stdout', stderr='/dev/stderr'`
 
     if operation == 'start':
-        sys.stdout.write("Starting daemon")
+        sys.stdout.write("Starting daemon\n")
         daemon.start()
         pid = daemon.get_pid()
 
         if not pid:
-            sys.stderr.write("Unable run daemon")
+            sys.stderr.write("Unable run daemon\n")
         else:
-            sys.stdout.write("Daemon is running [PID=%d]" % pid)
+            sys.stdout.write("Daemon is running [PID=%d]\n" % pid)
 
     elif operation == 'stop':
-        sys.stdout.write("Stoping daemon")
+        sys.stdout.write("Stoping daemon\n")
         daemon.stop()
 
     elif operation == 'restart':
-        sys.stdout.write("Restarting daemon")
+        sys.stdout.write("Restarting daemon\n")
         daemon.restart()
     elif operation == 'status':
-        sys.stdout.write("Viewing daemon status")
+        sys.stdout.write("Viewing daemon status\n")
         pid = daemon.get_pid()
 
         if not pid:
-            sys.stdout.write("Daemon isn't running ;)")
+            sys.stdout.write("Daemon isn't running ;)\n")
         else:
-            sys.stdout.write("Daemon is running [PID=%d]" % pid)
+            sys.stdout.write("Daemon is running [PID=%d]\n" % pid)
 
     sys.exit(0)
 
