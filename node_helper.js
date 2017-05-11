@@ -32,6 +32,7 @@ module.exports = NodeHelper.create({
 	// 				   });
 
 	createRestServer: function() {
+		var self = this;
 		// Basic URL Interface to accept push notifications formatted like
 		// http://localhost:8080/MMM-KeyBindings/notify?notification=TITLE&payload=JSONstringifiedSTRING
 		this.expressApp.get("/" + this.name + "/notify", (req, res) => {
@@ -53,6 +54,7 @@ module.exports = NodeHelper.create({
 	},
 
 	startPythonDaemon: function(args) {
+		var self = this;
 		// Start the Python Daemon to capture input from FireTV Remote via Bluetooth
 		// Python Daemon captures inputs using python-evdev and is configured to capture 
 		// All events from '/dev/input/event0'.  Use `cat /proc/bus/input/devices` to find the 
@@ -63,28 +65,29 @@ module.exports = NodeHelper.create({
 
 		// expected args: evdev: { enabled: true, event_path:'', disable_grab: false, 
 		// 							long_press_duration: 1.0, raw_mode: false }
-		var daemon_args = [require("path").resolve(__dirname,"daemon.py"), "start", "--server", 
+		var daemon_args = [require("path").resolve(__dirname,"daemon.py"), "restart", "--server", 
 							'http://localhost:8080/' + this.name + '/notify'];	// TODO: Reference this.expressApp to get url
-		if (args.event_path) {
+		if (("event_path" in args) && args.event_path) {
 			daemon_args.push('--event');
 			daemon_args.push(args.event_path);
 		}
-		if (disable_grab) {
+		if (("disable_grab" in args) && args.disable_grab) {
 			daemon_args.push('--no-grab');
 		}
-		if (args.raw_mode) {
+		if (("raw_mode" in args) && args.raw_mode) {
 			daemon_args.push('--raw');
 		}
-		if (typeof long_press_duration === "float" || typeof long_press_duration === "int") {
-			daemon_args.push('-l');
-			daemon_args.push(long_press_duration);
-		} else if (typeof long_press_duration === "string") {
-			daemon_args.push('-l');
-			daemon_args.push(parseFloat(long_press_duration));
+		if ("long_press_duration" in args) {
+			if (typeof args.long_press_duration === "float" || typeof args.long_press_duration === "int") {
+				daemon_args.push('-l');
+				daemon_args.push(args.long_press_duration);
+			} else if (typeof args.long_press_duration === "string") {
+				daemon_args.push('-l');
+				daemon_args.push(parseFloat(args.long_press_duration));
+			}
 		}
 
-		// var daemon = spawn("python",["/home/pi/MagicMirror/modules/MMM-KeyBindings/daemon.py", "start"]);
-		var daemon = spawn("python",[]);
+		var daemon = spawn("python", daemon_args);
 
 
 		daemon.stderr.on('data', (data) => { 
