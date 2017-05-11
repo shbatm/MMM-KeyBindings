@@ -17,7 +17,21 @@ module.exports = NodeHelper.create({
 		var self = this;
 
 		console.log("MMM-KeyBindings helper has started...");
+		this.restServerCreated = false;
+		this.pythonDaemonEnabled = false;
+	},
 
+	// MODEL FOR EXECUTING CODE AND RETURNING OUTPUT:
+	// child_proc = exec(command,
+	// 				   function (error, stdout, stderr) {
+	// 				      console.log('stdout: ' + stdout);
+	// 				      console.log('stderr: ' + stderr);
+	// 				      if (error !== null) {
+	// 				          console.log('exec error: ' + error);
+	// 				      }
+	// 				   });
+
+	createRestServer: function() {
 		// Basic URL Interface to accept push notifications formatted like
 		// http://localhost:8080/MMM-KeyBindings/notify?notification=TITLE&payload=JSONstringifiedSTRING
 		this.expressApp.get("/" + this.name + "/notify", (req, res) => {
@@ -36,7 +50,9 @@ module.exports = NodeHelper.create({
 			this.sendSocketNotification(notification, payload);
 			res.sendStatus(200);
 		});
+	},
 
+	startPythonDaemon: function(args) {
 		// Start the Python Daemon to capture input from FireTV Remote via Bluetooth
 		// Python Daemon captures inputs using python-evdev and is configured to capture 
 		// All events from '/dev/input/event0'.  Use `cat /proc/bus/input/devices` to find the 
@@ -44,32 +60,45 @@ module.exports = NodeHelper.create({
 		// Note: to stop capturing input without shutting down the mirror, run the following from
 		// a shell prompt: `python ~/MagicMirror/modules/MMM-KeyBindings/daemon.py stop`
 		var spawn = require('child_process').spawn;
+
+		// expected args: evdev: { enabled: true, event_path:'', disable_grab: false, 
+		// 							long_press_duration: 1.0, raw_mode: false }
+		var daemon_args = [require("path").resolve(__dirname,"daemon.py"), "start", "--server", 
+							'http://localhost:8080/' + this.name + '/notify'];	// TODO: Reference this.expressApp to get url
+		if (args.event_path) {
+			daemon_args.push('--event');
+			daemon_args.push(args.event_path);
+		}
+		if (disable_grab) {
+			daemon_args.push('--no-grab');
+		}
+		if (args.raw_mode) {
+			daemon_args.push('--raw');
+		}
+		if (typeof long_press_duration === "float" || typeof long_press_duration === "int") {
+			daemon_args.push('-l');
+			daemon_args.push(long_press_duration);
+		} else if (typeof long_press_duration === "string") {
+			daemon_args.push('-l');
+			daemon_args.push(parseFloat(long_press_duration));
+		}
+
 		// var daemon = spawn("python",["/home/pi/MagicMirror/modules/MMM-KeyBindings/daemon.py", "start"]);
-		var daemon = spawn("python",[require("path").resolve(__dirname,"daemon.py"), "start"]);
+		var daemon = spawn("python",[]);
 
 
 		daemon.stderr.on('data', (data) => { 
-			console.log(`MMM-KeyBindings daemon.py stderr: ${data}`);
+			console.error(`MMM-KeyBindings daemon.py stderr: ${data}`);
 		});
 
 		daemon.stdout.on('data', (data) => {
-			console.log(`MMM-KeyBindings daemon.py stderr: ${data}`);
+			console.log(`MMM-KeyBindings daemon.py stdout: ${data}`);
 		});
 
 		daemon.on('close', (code) => {
-			console.log(`MMM-KeyBindings daemon.py exited with code ${code}`);
+			console.error(`MMM-KeyBindings daemon.py exited with code ${code}`);
 		});
 	},
-
-	// MODEL FOR EXECUTING CODE AND RETURNING OUTPUT:
-	// child_proc = exec(command,
-	// 				   function (error, stdout, stderr) {
-	// 				      console.log('stdout: ' + stdout);
-	// 				      console.log('stderr: ' + stderr);
-	// 				      if (error !== null) {
-	// 				          console.log('exec error: ' + error);
-	// 				      }
-	// 				   });
 
 	// Override socketNotificationReceived method.
 
@@ -81,6 +110,18 @@ module.exports = NodeHelper.create({
 	 */
 	socketNotificationReceived: function(notification, payload) {
 		var self = this;
+		if (notification === "ENABLE_RESTNOTIFYSERVER") {
+			if (!this.restServerCreated) {
+				this.createRestServer();
+			}
+		}
+		if (notification === "ENABLE_PYTHONDAEMON") {
+			if (this.restServerCreated && !this.pythonDaemonEnabled) {
+				this.startPythonDaemon(payload);
+			} else {
+				console.error("Cannot enable python daemon. Did the REST server not get enabled?");
+			}
+		}
 
 		if (notification === "PROCESS_KEYPRESS") {
 			switch(payload.KeyName) {

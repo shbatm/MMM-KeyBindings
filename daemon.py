@@ -279,30 +279,30 @@ def main():
     daemon = MyDaemon(pid_path, args=args)
 
     if operation == 'start':
-        print("Starting daemon")
+        sys.stdout.write("Starting daemon")
         daemon.start()
         pid = daemon.get_pid()
 
         if not pid:
-            print("Unable run daemon")
+            sys.stderr.write("Unable run daemon")
         else:
-            print("Daemon is running [PID=%d]" % pid)
+            sys.stdout.write("Daemon is running [PID=%d]" % pid)
 
     elif operation == 'stop':
-        print("Stoping daemon")
+        sys.stdout.write("Stoping daemon")
         daemon.stop()
 
     elif operation == 'restart':
-        print("Restarting daemon")
+        sys.stdout.write("Restarting daemon")
         daemon.restart()
     elif operation == 'status':
-        print("Viewing daemon status")
+        sys.stdout.write("Viewing daemon status")
         pid = daemon.get_pid()
 
         if not pid:
-            print("Daemon isn't running ;)")
+            sys.stdout.write("Daemon isn't running ;)")
         else:
-            print("Daemon is running [PID=%d]" % pid)
+            sys.stdout.write("Daemon is running [PID=%d]" % pid)
 
     sys.exit(0)
 
