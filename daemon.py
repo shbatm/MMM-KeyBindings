@@ -12,12 +12,6 @@ from asyncore import file_dispatcher, loop
 import evdev  
 import json, requests
 
-# Global Preferences & Settings
-event_path = '/dev/input/event0'
-allow_grab = True
-server_path = 'http://localhost:8080/MMM-KeyBindings/notify'
-
-# Base Classes - Do not edit anything below this line
 class Daemon(object):
     """
     A generic daemon class.
@@ -26,11 +20,12 @@ class Daemon(object):
     """
 
     def __init__(self, pidfile, stdin='/dev/null',
-                 stdout='/dev/null', stderr='/dev/null'):
+                 stdout='/dev/null', stderr='/dev/null', args=None):
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
         self.pidfile = pidfile
+        self.args = args
 
     def daemonize(self):
         """
@@ -169,24 +164,27 @@ class Daemon(object):
 class InputDeviceDispatcher(file_dispatcher):
 	_pendingKeyPress = None
 
-    def __init__(self, device):
+    def __init__(self, device, args):
         self.device = device
+        self.args = args
         file_dispatcher.__init__(self, device)
 
     def recv(self, ign=None):
         return self.device.read()
         
     def handle_read(self):
-        global server_path
-        keyStateName = None
-        keyPressDuration = 0.0
         for event in self.recv():
             if event.type == evdev.ecodes.EV_KEY:
+		        keyStateName = None
+		        keyPressName = None
+		        keyPressDuration = 0.0
                 kev = evdev.events.KeyEvent(event)
+
                 if kev.keystate == kev.key_up:
                     keyStateName = 'KEY_UP'
                     if _pendingKeyPress != None and _pendingKeyPress.keycode == kev.keycode:
                     	keyPressDuration = kev.event.timestamp() - _pendingKeyPress.event.timestamp()
+                    	keyPressName = "KEY_LONGPRESSED" if (keyPressDuration >= self.args.lp_threshold) else "KEY_PRESSED"
                     _pendingKeyPress = None 	# Clear the pending key, a full keypress has occurred or something else was pressed
                 elif kev.keystate == kev.key_down:
                     keyStateName = 'KEY_DOWN'
@@ -199,22 +197,26 @@ class InputDeviceDispatcher(file_dispatcher):
                     	_pendingKeyPress = None 	# Something happened, a different key was pressed
                 else:
                     keyStateName = 'KEY_UNKNOWN'
-                
-                kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': keyPressDuration})
-                payload = {'notification':'KEYPRESS','payload':kev_json}
-                r = requests.get(server_path, params=payload)
-                # print(kev.keycode + " " + str(kev.keystate))
+
+                if self.args.raw_mode:  # Raw mode enabled, send everything
+                	kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': keyPressDuration})
+                	payload = {'notification':'KEYPRESS','payload':kev_json}
+                	r = requests.get(self.args.server_url, params=payload)
+                	# print(kev.keycode + " " + str(kev.keystate))
+
+                if keyPressName != None:
+                	kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyPressName, 'Duration': keyPressDuration})
+                	payload = {'notification':'KEYPRESS','payload':kev_json}
+                	r = requests.get(self.args.server_url, params=payload)
+
         
         
 class MyDaemon(Daemon):                    
-    def run(self):
-        global event_path
-        global allow_grab
-        
-        dev = evdev.InputDevice(event_path)
-        if allow_grab:
+    def run(self):        
+        dev = evdev.InputDevice(self.args.event_path)
+        if self.args.allow_grab:
             dev.grab()                
-        InputDeviceDispatcher(dev)
+        InputDeviceDispatcher(dev, self.args)
         loop()
 
 
@@ -224,7 +226,7 @@ def main():
     """
     parser = argparse.ArgumentParser(
         #prog='PROG',
-        description='Daemon runner',
+        description='Runs a daemon which captures InputEvents from a device using evdev',
         epilog="That's all folks"
     )
 
@@ -234,13 +236,47 @@ def main():
                     help='Operation with daemon. Accepts any of these values: start, stop, restart, status',
                     choices=['start', 'stop', 'restart', 'status'])
 
+    parser.add_argument('-e','--event',
+    				metavar='EVENTPATH',
+    				type=str,
+    				help='Path to the evdev event handler, e.g. /dev/input/event0',
+    				default='/dev/input/event0',
+    				dest='event_path')
+
+    parser.add_argument('-n','--no-grab',
+    				metavar='NO_GRAB',
+    				help='By default, this script grabs all inputs from the device. Use -n to disable',
+    				action='store_false',
+    				dest='allow_grab')
+
+    parser.add_argument('-r','--raw',
+    				metavar='RAW',
+    				help='Enables raw mode to send individual KEY_UP, KEY_DOWN, KEY_HOLD events instead of just KEY_PRESSED and KEY_LONGPRESSED.',
+    				action='store_true',
+    				dest='raw_mode')
+
+    parser.add_argument('-l','--long-press-time',
+    				metavar='LONG PRESS TIME',
+    				help='Duration threshold between KEY_PRESSED and KEY_LONGPRESSED in seconds (as float). Default is 1.0s',
+    				type=float,
+    				dest='lp_threshold',
+    				default=1.0)
+
+    parser.add_argument('-s','--server',
+    				metavar='SERVER',
+    				type=str,
+    				help='Server URL to push events.',
+    				default='http://localhost:8080/MMM-KeyBindings/notify',
+    				dest='server_url')    
+
     args = parser.parse_args()
     operation = args.operation
 
     # Daemon
     app_name = os.path.splitext(os.path.basename(__file__))[0]
     script_path = os.path.dirname(os.path.abspath(__file__))
-    daemon = MyDaemon(script_path + '/' + app_name + '.pid')
+    pid_path = script_path + '/' + app_name + '.pid'
+    daemon = MyDaemon(pid_path, args=args)
 
     if operation == 'start':
         print("Starting daemon")
