@@ -12,7 +12,12 @@ from asyncore import file_dispatcher, loop
 import evdev  
 import json, requests
 
+# Global Preferences & Settings
+event_path = '/dev/input/event0'
+allow_grab = True
+server_path = 'http://localhost:8080/MMM-KeyBindings/notify'
 
+# Base Classes - Do not edit anything below this line
 class Daemon(object):
     """
     A generic daemon class.
@@ -97,9 +102,12 @@ class Daemon(object):
         pid = self.get_pid()
 
         if pid:
-            message = "pidfile %s already exist. Daemon already running?\n"
-            sys.stderr.write(message % self.pidfile)
-            sys.exit(1)
+            if os.path.exists("/proc/%s" % pid):
+                message = "pidfile %s already exist. Daemon already running?\n"
+                sys.stderr.write(message % self.pidfile)
+                sys.exit(1)
+            elif os.path.exists(self.pidfile): # Delete leftover PID file
+                    os.remove(self.pidfile)
 
         # Start the daemon
         self.daemonize()
@@ -159,6 +167,8 @@ class Daemon(object):
         raise NotImplementedError
 
 class InputDeviceDispatcher(file_dispatcher):
+    
+    
     def __init__(self, device):
         self.device = device
         file_dispatcher.__init__(self, device)
@@ -167,6 +177,7 @@ class InputDeviceDispatcher(file_dispatcher):
         return self.device.read()
         
     def handle_read(self):
+        global server_path
         for event in self.recv():
             if event.type == evdev.ecodes.EV_KEY:
                 kev = evdev.events.KeyEvent(event)
@@ -181,14 +192,18 @@ class InputDeviceDispatcher(file_dispatcher):
                 
                 kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName})
                 payload = {'notification':'KEYPRESS','payload':kev_json}
-                r = requests.get('http://localhost:8080/MMM-KeyBindings/notify', params=payload)
+                r = requests.get(server_path, params=payload)
                 # print(kev.keycode + " " + str(kev.keystate))
         
         
 class MyDaemon(Daemon):                    
     def run(self):
-        dev = evdev.InputDevice('/dev/input/event0')
-        dev.grab()                
+        global event_path
+        global allow_grab
+        
+        dev = evdev.InputDevice(event_path)
+        if allow_grab:
+            dev.grab()                
         InputDeviceDispatcher(dev)
         loop()
 
@@ -213,7 +228,9 @@ def main():
     operation = args.operation
 
     # Daemon
-    daemon = MyDaemon(os.path.dirname(os.path.realpath(__file__)) + '/MMM-KeyBindings_daemon.pid')
+    app_name = os.path.splitext(os.path.basename(__file__))[0]
+    script_path = os.path.dirname(os.path.abspath(__file__))
+    daemon = MyDaemon(script_path + '/' + app_name + '.pid')
 
     if operation == 'start':
         print("Starting daemon")
