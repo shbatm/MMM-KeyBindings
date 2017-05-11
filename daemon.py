@@ -167,8 +167,8 @@ class Daemon(object):
         raise NotImplementedError
 
 class InputDeviceDispatcher(file_dispatcher):
-    
-    
+	_pendingKeyPress = None
+
     def __init__(self, device):
         self.device = device
         file_dispatcher.__init__(self, device)
@@ -178,19 +178,29 @@ class InputDeviceDispatcher(file_dispatcher):
         
     def handle_read(self):
         global server_path
+        keyStateName = None
+        keyPressDuration = 0.0
         for event in self.recv():
             if event.type == evdev.ecodes.EV_KEY:
                 kev = evdev.events.KeyEvent(event)
                 if kev.keystate == kev.key_up:
                     keyStateName = 'KEY_UP'
+                    if _pendingKeyPress != None and _pendingKeyPress.keycode == kev.keycode:
+                    	keyPressDuration = kev.event.timestamp() - _pendingKeyPress.event.timestamp()
+                    _pendingKeyPress = None 	# Clear the pending key, a full keypress has occurred or something else was pressed
                 elif kev.keystate == kev.key_down:
                     keyStateName = 'KEY_DOWN'
+                    _pendingKeyPress = kev 		# Store copy of KeyEvent to calculate duration
                 elif kev.keystate == kev.key_hold:
                     keyStateName = 'KEY_HOLD'
+                    if _pendingKeyPress != None and _pendingKeyPress.keycode == kev.keycode:
+                    	keyPressDuration = kev.event.timestamp() - _pendingKeyPress.event.timestamp()
+                    else:
+                    	_pendingKeyPress = None 	# Something happened, a different key was pressed
                 else:
                     keyStateName = 'KEY_UNKNOWN'
                 
-                kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName})
+                kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': keyPressDuration})
                 payload = {'notification':'KEYPRESS','payload':kev_json}
                 r = requests.get(server_path, params=payload)
                 # print(kev.keycode + " " + str(kev.keystate))
