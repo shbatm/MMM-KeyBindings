@@ -213,7 +213,7 @@ def main():
     operation = args.operation
 
     # Daemon
-    daemon = MyDaemon('/home/pi/python_daemon.pid', stdout='/dev/stdout')
+    daemon = MyDaemon(os.path.dirname(os.path.realpath(__file__)) + '/MMM-KeyBindings_daemon.pid')
 
     if operation == 'start':
         print("Starting daemon")
