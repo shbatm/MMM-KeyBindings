@@ -26,6 +26,9 @@ class Daemon(object):
         self.stderr = stderr
         self.pidfile = pidfile
         self.args = args
+        if self.args.debug_mode:
+            self.stdout = '/dev/stdout'
+            self.stderr = '/dev/stderr'
 
     def daemonize(self):
         """
@@ -200,22 +203,34 @@ class InputDeviceDispatcher(file_dispatcher):
                     keyStateName = 'KEY_UNKNOWN'
                     
                 if self.args.raw_mode:  # Raw mode enabled, send everything
-                    kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': keyPressDuration})
+                    kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': round(keyPressDuration,4)})
                     payload = {'notification':'KEYPRESS','payload':kev_json}
                     r = requests.get(self.args.server_url, params=payload)
-                    print(kev.keycode + " " + str(kev.keystate))
+                    if self.args.debug_mode and self.args.verbose:
+                        print(r.url)
+                        print(r)
+                
+                if self.args.debug_mode: 
+                    sys.stdout.write(kev.keycode + " " + str(kev.keystate) + '\n')
                     
                 if keyPressName != None:
-                    kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyPressName, 'Duration': keyPressDuration})
+                    kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyPressName, 'Duration': round(keyPressDuration,4)})
                     payload = {'notification':'KEYPRESS','payload':kev_json}
                     r = requests.get(self.args.server_url, params=payload)
-                    print("%s: %s, duration %.2f" % (kev.keycode, keyPressName, keyPressDuration))
+                    if self.args.debug_mode: 
+                        sys.stdout.write("%s: %s, duration %.2f\n" % (kev.keycode, keyPressName, round(keyPressDuration,4)))
+                        if self.args.verbose:
+                            print(r.url)
+                            print(r)
                     
 
         
         
 class MyDaemon(Daemon):                    
-    def run(self):        
+    def run(self):
+        if self.args.debug_mode:
+            sys.stdout.write("Running in debug mode with args:\n")
+            print(self.args)
         dev = evdev.InputDevice(self.args.event_path)
         if self.args.allow_grab:
             dev.grab()                
@@ -272,6 +287,16 @@ def main():
                     default='http://localhost:8080/MMM-KeyBindings/notify',
                     dest='server_url')    
 
+    parser.add_argument('-d','--debug',
+                    help='Enables debugging mode which will print out any key events',
+                    action='store_true',
+                    dest='debug_mode')
+
+    parser.add_argument('-v','--verbose',
+                    help='Enables verbose debugging mode which will print out more info. Requires -d / --debug flag',
+                    action='store_true',
+                    dest='verbose')
+
     args = parser.parse_args()
     operation = args.operation
 
@@ -279,7 +304,7 @@ def main():
     app_name = os.path.splitext(os.path.basename(__file__))[0]
     script_path = os.path.dirname(os.path.abspath(__file__))
     pid_path = script_path + '/' + app_name + '.pid'
-    daemon = MyDaemon(pid_path, args=args, stdout='/dev/stdout', stderr='/dev/stderr')  # FOR DEBUGGING: Add `, stdout='/dev/stdout', stderr='/dev/stderr'`
+    daemon = MyDaemon(pid_path, args=args)  # FOR DEBUGGING: Add `, stdout='/dev/stdout', stderr='/dev/stderr'`
 
     if operation == 'start':
         sys.stdout.write("Starting daemon\n")
