@@ -69,8 +69,8 @@ module.exports = NodeHelper.create({
 
         // expected args: evdev: { enabled: true, event_path:'', disable_grab: false, 
         //                          long_press_duration: 1.0, raw_mode: false }
-        var daemon_args = [require("path").resolve(__dirname,"daemon.py"), "restart", "--server", 
-                            'http://localhost:8080/' + this.name + '/notify'];  // TODO: Reference this.expressApp to get url
+        var daemon_args = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
+                            "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];  // TODO: Reference this.expressApp to get url
 
         if (("event_path" in args) && args.event_path) {
             daemon_args.push('--event');
@@ -93,19 +93,19 @@ module.exports = NodeHelper.create({
         }
 
         // console.log(JSON.stringify(daemon_args, null, 4));
-        var daemon = spawn("python", daemon_args);
+        var daemon = spawn("pm2", daemon_args);
 
 
         daemon.stderr.on('data', (data) => { 
-            console.error(`MMM-KeyBindings daemon.py stderr: ${data}`);
+            console.error(`MMM-KeyBindings daemon stderr: ${data}`);
         });
 
         daemon.stdout.on('data', (data) => {
-            console.log(`MMM-KeyBindings daemon.py stdout: ${data}`);
+            console.log(`MMM-KeyBindings daemon stdout: ${data}`);
         });
 
         daemon.on('close', (code) => {
-            console.log(`MMM-KeyBindings daemon.py exited with code ${code}`);
+            console.log(`MMM-KeyBindings daemon exited with code ${code}`);
         });
 
         this.pythonDaemonEnabled = true;
