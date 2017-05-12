@@ -4,32 +4,21 @@
  * By shbatm
  * MIT Licensed.
  */
+ "use strict";
 
 var NodeHelper = require("node_helper");
 var url = require("url");
 const exec = require("child_process").exec;
-const os = require("os");
+// const os = require("os");
 
 
 module.exports = NodeHelper.create({
 
     start: function() {
-        var self = this;
-
         console.log("MMM-KeyBindings helper has started...");
         this.notifyServerCreated = false;
         this.pythonDaemonEnabled = false;
     },
-
-    // MODEL FOR EXECUTING CODE AND RETURNING OUTPUT:
-    // child_proc = exec(command,
-    //                 function (error, stdout, stderr) {
-    //                    console.log('stdout: ' + stdout);
-    //                    console.log('stderr: ' + stderr);
-    //                    if (error !== null) {
-    //                        console.log('exec error: ' + error);
-    //                    }
-    //                 });
 
     createNotifyServer: function() {
         var self = this;
@@ -58,7 +47,6 @@ module.exports = NodeHelper.create({
     },
 
     startPythonDaemon: function(args) {
-        var self = this;
         // Start the Python Daemon to capture input from FireTV Remote via Bluetooth
         // Python Daemon captures inputs using python-evdev and is configured to capture 
         // All events from '/dev/input/event0'.  Use `cat /proc/bus/input/devices` to find the 
@@ -67,33 +55,33 @@ module.exports = NodeHelper.create({
         // a shell prompt: `python ~/MagicMirror/modules/MMM-KeyBindings/daemon.py stop`
         var spawn = require('child_process').spawn;
 
-        // expected args: evdev: { enabled: true, event_path:'', disable_grab: false, 
-        //                          long_press_duration: 1.0, raw_mode: false }
-        var daemon_args = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
-                            "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];  // TODO: Reference this.expressApp to get url
+        // expected args: evdev: { enabled: true, eventPath:'', disableGrab: false, 
+        //                          longPressDuration: 1.0, rawMode: false }
+        var daemonArgs = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
+                            "--", "--server", 'http://localhost:8080/' + this.name + '/notify', "--debug"];
 
-        if (("event_path" in args) && args.event_path) {
-            daemon_args.push('--event');
-            daemon_args.push(args.event_path);
+        if (("eventPath" in args) && args.eventPath) {
+            daemonArgs.push('--event');
+            daemonArgs.push(args.eventPath);
         }
-        if (("disable_grab" in args) && args.disable_grab) {
-            daemon_args.push('--no-grab');
+        if (("disableGrab" in args) && args.disableGrab) {
+            daemonArgs.push('--no-grab');
         }
-        if (("raw_mode" in args) && args.raw_mode) {
-            daemon_args.push('--raw');
+        if (("rawMode" in args) && args.rawMode) {
+            daemonArgs.push('--raw');
         }
-        if ("long_press_duration" in args) {
-            if (typeof args.long_press_duration === "number") {
-                daemon_args.push('-l');
-                daemon_args.push(args.long_press_duration);
-            } else if (typeof args.long_press_duration === "string") {
-                daemon_args.push('-l');
-                daemon_args.push(parseFloat(args.long_press_duration));
+        if ("longPressDuration" in args) {
+            if (typeof args.longPressDuration === "number") {
+                daemonArgs.push('-l');
+                daemonArgs.push(args.longPressDuration);
+            } else if (typeof args.longPressDuration === "string") {
+                daemonArgs.push('-l');
+                daemonArgs.push(parseFloat(args.longPressDuration));
             }
         }
 
-        // console.log(JSON.stringify(daemon_args, null, 4));
-        var daemon = spawn("pm2", daemon_args);
+        // console.log(JSON.stringify(daemonArgs, null, 4));
+        var daemon = spawn("pm2", daemonArgs);
 
 
         daemon.stderr.on('data', (data) => { 
@@ -113,15 +101,15 @@ module.exports = NodeHelper.create({
 
     handleEvDevKeyPressEvents: function(payload) {
         var self = this;
-        var handled = false;
         this.currentPayload = payload;
+        var screenStatus;
         //console.log("Current Payload: " + JSON.stringify(payload, null, 4));
         switch (payload.SpecialKeys[0]) {
-            case "screen_power_on":
-                screen_status = exec("tvservice --status",
+            case "screenPowerOn":
+                screenStatus = exec("tvservice --status",
                        function (error, stdout, stderr) {
                           var handled = false;
-                          if (stdout.indexOf("TV is off") != -1) {
+                          if (stdout.indexOf("TV is off") !== -1) {
                             // Screen is OFF, turn it ON
                             exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
                             handled = true;
@@ -130,11 +118,11 @@ module.exports = NodeHelper.create({
                           self.handleEvDevKeyPressEventsCallback(handled);
                        });              
                 break;
-            case "screen_power_off":
-                screen_status = exec("tvservice --status",
+            case "screenPowerOff":
+                screenStatus = exec("tvservice --status",
                        function (error, stdout, stderr) {
                           var handled = false;
-                          if (stdout.indexOf("HDMI") != -1) {
+                          if (stdout.indexOf("HDMI") !== -1) {
                             // Screen is ON, turn it OFF
                             exec("tvservice -o", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
                             handled = true;
@@ -143,13 +131,13 @@ module.exports = NodeHelper.create({
                           self.handleEvDevKeyPressEventsCallback(handled);
                        });
                 break;
-            case "screen_power_toggle":
-                screen_status = exec("tvservice --status",
+            case "screenPowerToggle":
+                screenStatus = exec("tvservice --status",
                        function (error, stdout, stderr) {
-                          if (stdout.indexOf("TV is off") != -1) {
+                          if (stdout.indexOf("TV is off") !== -1) {
                             // Screen is OFF, turn it ON
                             exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
-                          } else if (stdout.indexOf("HDMI") != -1) {
+                          } else if (stdout.indexOf("HDMI") !== -1) {
                             // Screen is ON, turn it OFF
                             exec("tvservice -o", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
                           }
@@ -183,7 +171,6 @@ module.exports = NodeHelper.create({
      * argument payload mixed - The payload of the notification.
      */
     socketNotificationReceived: function(notification, payload) {
-        var self = this;
         if (notification === "ENABLE_RESTNOTIFYSERVER") {
             if (!this.notifyServerCreated) {
                 this.createNotifyServer();

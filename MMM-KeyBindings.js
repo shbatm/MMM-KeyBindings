@@ -1,4 +1,4 @@
-/* global Module */
+/* global Module, window, Mousetrap */
 
 /* Magic Mirror
  * Module: MMM-KeyBindings
@@ -6,20 +6,23 @@
  * By shbatm
  * MIT Licensed.
  */
+ "use strict";
+
 
 Module.register("MMM-KeyBindings", {
     defaults: {
         enabledKeyStates: ["KEY_PRESSED", "KEY_LONGPRESSED"], // Other options are 'KEY_UP', 'KEY_DOWN', 
                                                               // 'KEY_HOLD' but evdev.raw_mode must be true to receive
-        handleKeys: [], // List of keys to handle in this module; blank == any
+        handleKeys: [], // List of additional keys to handle in this module; blank == standard set
+        disableKeys: [], // list of keys to ignore from the default set.
         enableNotifyServer: true,
         evdev: {        enabled: true, 
-                        event_path:'', 
-                        disable_grab: false, 
-                        long_press_duration: 0.7, 
-                        raw_mode: false
+                        eventPath:'', 
+                        disableGrab: false, 
+                        longPressDuration: 0.7, 
+                        rawMode: false
                 },
-        evdev_keymap: { Home: "KEY_HOMEPAGE", 
+        evdevKeymap: {  Home: "KEY_HOMEPAGE", 
                         Enter: "KEY_KPENTER", 
                         ArrowLeft: "KEY_LEFT", 
                         ArrowRight: "KEY_RIGHT", 
@@ -30,18 +33,21 @@ Module.register("MMM-KeyBindings", {
                         MediaNextTrack: "KEY_FASTFORWARD", 
                         MediaPreviousTrack: "KEY_REWIND",
                         Return: "KEY_BACK"},
-        specialKeys: {  screen_power_on: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
-                        screen_power_off: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
-                        screen_power_toggle: { KeyName:"", KeyState:"" },
-                        osd_toggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+        specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+                        screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
+                        screenPowerToggle: { KeyName:"", KeyState:"" },
+                        osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
                      }, 
 
     },
 
+    defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack'],
+
+    defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack'},
+
     requiresVersion: "2.1.0", // Required version of MagicMirror
 
     start: function() {
-        var self = this;
         console.log(this.name + " has started...");
 
         this.sendSocketNotification("MMM-KeyBindings-SOCKET_START", this.name);
@@ -58,14 +64,63 @@ Module.register("MMM-KeyBindings", {
 
         // Generate a reverse key map
         this.reverseKeyMap = {};
-        for (var eKey in this.config.evdev_keymap) {
-            if (this.config.evdev_keymap.hasOwnProperty(eKey)) {
-                this.reverseKeyMap[this.config.evdev_keymap[eKey]] = eKey;
+        for (var eKey in this.config.evdevKeymap) {
+            if (this.config.evdevKeymap.hasOwnProperty(eKey)) {
+                this.reverseKeyMap[this.config.evdevKeymap[eKey]] = eKey;
             }
         }
 
         // Nothing else to do...
     },
+
+    getScripts: function () {
+        return ['mousetrap.min.js', 'mousetrap-global-bind.min.js'];
+    },
+
+    setupMousetrap: function() {
+        var self = this;
+        var keys = this.defaultMouseTrapKeys;
+        var keyCodes = this.defaultMouseTrapKeyCodes;
+
+        Mousetrap.addKeycodes(keyCodes);
+
+        // Add extra keys (must be in Mousetrap form)
+        // TODO: Add ability to add extra keycodes as well
+        keys = keys.concat(this.config.handleKeys);
+
+        // Remove Disabled Keys
+        for (var i = this.config.disableKeys.length - 1; i >= 0; i--) {
+            var j = keys.indexOf(this.config.disableKeys[i]);
+            if (j > -1) {
+                keys.splice(j, 1);
+            }
+        }
+
+        // console.log(keys);
+
+        Mousetrap.bindGlobal(keys, (e) => {
+            // Prevent the default action from occuring
+            if (e.preventDefault) {
+                e.preventDefault();
+            } else {
+                // internet explorer
+                e.returnValue = false;
+            }
+
+            var payload = {};
+            payload.KeyCode = e.key;
+            payload.KeyState = e.type;
+            payload.CurrentMode = self.currentKeyPressMode;
+            if (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) {
+                payload.Sender = "SERVER";
+            } else {
+                payload.Sender = window.location.hostname + ":" + window.location.port;
+            }
+            self.sendNotification("KEYPRESS", payload);
+            //console.log(payload);
+        });
+    },
+
 
     addSpecialKeys: function(payload) {
         // Special Keys are keys processed by this module first above all other modes
@@ -79,9 +134,9 @@ Module.register("MMM-KeyBindings", {
         for (var sKey in this.config.specialKeys) {
             // console.log("Testing specialKeys", sKey);
             if (("KeyName" in this.config.specialKeys[sKey]) && 
-                payload.KeyName == this.config.specialKeys[sKey].KeyName && 
+                payload.KeyName === this.config.specialKeys[sKey].KeyName && 
                 ("KeyState" in this.config.specialKeys[sKey]) && 
-                payload.KeyState == this.config.specialKeys[sKey].KeyState) {
+                payload.KeyState === this.config.specialKeys[sKey].KeyState) {
                 payload.SpecialKeys.push(sKey);
             }
         }
@@ -89,15 +144,14 @@ Module.register("MMM-KeyBindings", {
     },
 
     handleLocalSpecialKeys: function(payload) {
-        var self = this;
         var handled = false;
         // console.log("Current Payload: " + JSON.stringify(payload, null, 4));
         switch (payload.SpecialKeys[0]) {
-            case "osd_toggle":
+            case "osdToggle":
                 if (this.currentKeyPressMode === "DEFAULT") {
                     console.log("Showing OSD"); // !TODO: Actually have an OSD menu
                     this.currentKeyPressMode = this.name + "_OSD";
-                } else if (this.currentKeyPressMode == this.name + "_OSD") {
+                } else if (this.currentKeyPressMode === this.name + "_OSD") {
                     console.log("Hiding OSD"); // !TODO: Actually have an OSD menu
                     this.currentKeyPressMode = "DEFAULT";
                 }
@@ -118,12 +172,12 @@ Module.register("MMM-KeyBindings", {
         // this variable stores all of the keys that require node_helper to do something
         // Special keys will boomerang until an action is taken or it gets passed to the
         // other modules.
-        var node_helper_keys = ["screen_power_on", "screen_power_off", "screen_power_toggle"];
+        var nodeHelperKeys = ["screenPowerOn", "screenPowerOff", "screenPowerToggle"];
         if (!("SpecialKeys" in payload)) {
             payload = this.addSpecialKeys(payload);
         }
         if (payload.SpecialKeys.length > 0) {
-            if (node_helper_keys.indexOf(payload.SpecialKeys[0]) > -1) {
+            if (nodeHelperKeys.indexOf(payload.SpecialKeys[0]) > -1) {
                 // console.log(payload.KeyName + " is a special key should be handled by node_helper...");
                 this.sendSocketNotification("PROCESS_KEYPRESS", payload);
                 return;
@@ -162,7 +216,7 @@ Module.register("MMM-KeyBindings", {
 
     notificationReceived: function (notification, payload, sender) {
         if (notification === "DOM_OBJECTS_CREATED") {
-            // do nothing
+            this.setupMousetrap();
         }
         if (notification === "ALL_MODULES_STARTED") {
             // do nothing

@@ -26,3 +26,23 @@ var config = {
 |----------------- |-----------
 | `option1`        | *Required* DESCRIPTION HERE
 | `option2`        | *Optional* DESCRIPTION HERE TOO <br><br>**Type:** `int`(milliseconds) <br>Default 60000 milliseconds (1 minute)
+
+
+## API
+Sends a module notification on a keypress with the following properties:
+```js
+notification: "KEYPRESS"
+payload: {  CurrentMode: "DEFAULT"  // "Mode" or "Focus" to respond to
+            KeyCode: "Enter"        // The plain text key name pressed
+            KeyState: "KEY_PRESSED" // What happened
+            Sender: "SERVER"        // Source of the input.
+}
+```
+
+
+## Python Script Requirements
+python version
+
+Modules:
+python-evdev
+watchdog

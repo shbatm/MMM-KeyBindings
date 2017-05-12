@@ -5,8 +5,8 @@ import argparse
 import os
 import sys
 import time
-import atexit
-import logging
+#import atexit
+#import logging
 import signal
 from asyncore import file_dispatcher, loop
 import evdev  
@@ -64,7 +64,7 @@ class InputDeviceDispatcher(file_dispatcher):
                         print(r.url)
                         print(r)
                 
-                if self.args.debug_mode: 
+                if self.args.debug_mode and self.args.verbose: 
                     sys.stdout.write(kev.keycode + " " + str(kev.keystate) + '\n')
                     
                 if keyPressName != None:
@@ -80,16 +80,45 @@ class InputDeviceDispatcher(file_dispatcher):
 class evdev_daemon(object): 
     def __init__(self, args=None):
         self.args = args
+        self.dev = None
 
     def run(self):
         if self.args.debug_mode:
             sys.stdout.write("Running in debug mode with args:\n")
             print(self.args)
-        dev = evdev.InputDevice(self.args.event_path)
-        if self.args.allow_grab:
-            dev.grab()                
-        InputDeviceDispatcher(dev, self.args)
-        loop()
+
+        # Make sure the event_path actually exists. Sometimes it gets removed if the device disconnects
+        # This will wait indefinitely until the device exists again.
+        while True:
+            if os.path.exists(self.args.event_path):
+                break
+            time.sleep(0.1)
+
+        try:
+            self.dev = evdev.InputDevice(self.args.event_path)
+
+            if self.args.allow_grab:
+                self.dev.grab()                
+            
+            InputDeviceDispatcher(self.dev, self.args)
+            loop()
+        except OSError as err:
+            err_str = str(err)
+            if err_str.find("No such file or directory") > 0:
+                # Restart and wait for the device to come back
+                if self.args.debug_mode:
+                    sys.stdout.write("'%s' doesn't exist. Restarting and waiting for it to return" % (self.args.event_path))
+                self.run()
+            elif err_str.find("Permission denied") > 0:
+                if self.args.debug_mode:
+                    sys.stdout.write("%s. Restarting and trying again. A previous script may not have exited properly, or maybe try with '--no-grab'" % (self.args.event_path))
+                self.run()
+            else:
+                print(err)
+                #sys.stdout.write(str(err))
+                sys.exit(1)
+
+
 
 
 def main():
