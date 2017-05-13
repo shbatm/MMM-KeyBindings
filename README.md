@@ -39,10 +39,48 @@ You can then configure other modules to handle the key presses and, if necessary
 
 ## Configuration options
 
-| Option           | Description
-|----------------- |-----------
-| `option1`        | *Required* DESCRIPTION HERE
-| `option2`        | *Optional* DESCRIPTION HERE TOO <br><br>**Type:** `int`(milliseconds) <br>Default 60000 milliseconds (1 minute)
+| Option                | Description
+|-----------------------|-----------
+| `enabledKeyStates`    | Array of Key States that the module should handle.  <br />*Default:* `KEY_PRESSED` & `KEY_LONGPRESSED`<br />
+*Available:* `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` (these require `evdev.rawMode`) to be true to receive events.
+| `handleKeys`          | Array of additional keys to handle in this module above the standard set,  <br / > Reference [Mousetrap API](https://craig.is/killing/mice) for the available key enumerations.
+| `disableKeys`         | Array of keys to ignore from the default set.
+| `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
+| `endableRelayServer`  | Enables non-"KEYPRESS" HTTP GET notifications to be passed through to other modules when received on the "Notify" server. Useful for enabling 3rd party communication with other modules. <br />*Default:* `true` <br />*Requires:* `enableNotifyServer: true`.
+| 
+```
+evdev: { enabled: true,
+         eventPath:'',
+         disableGrab: false,
+         longPressDuration: 0.7,
+         rawMode: false } 
+```
+| Configuration options for the `python-evdev` daemon. <br />
+| `eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
+| `disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
+| `longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
+| `rawMode` | Enables raw mode to send the individual `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` events.
+
+        evdevKeymap: {  Home: "KEY_HOMEPAGE", 
+                        Enter: "KEY_KPENTER", 
+                        ArrowLeft: "KEY_LEFT", 
+                        ArrowRight: "KEY_RIGHT", 
+                        ArrowUp: "KEY_UP", 
+                        ArrowDown: "KEY_DOWN",
+                        Menu: "KEY_MENU", 
+                        MediaPlayPause: "KEY_PLAYPAUSE", 
+                        MediaNextTrack: "KEY_FASTFORWARD", 
+                        MediaPreviousTrack: "KEY_REWIND",
+                        Return: "KEY_BACK"},
+        specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+                        screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
+                        screenPowerToggle: { KeyName:"", KeyState:"" },
+                        osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+                        extInterrupt1: { KeyName: "", KeyState: "" },
+                        extInterrupt2: { KeyName: "", KeyState: "" },
+                        extInterrupt3: { KeyName: "", KeyState: "" },
+                     }, 
+        extInterruptModes: [],
 
 ## <a name="HandlingKeys"></a>Handling Keys in Another Module
 
