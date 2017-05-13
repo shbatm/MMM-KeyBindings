@@ -43,19 +43,17 @@ You can then configure other modules to handle the key presses and, if necessary
 |-----------------------|-----------
 | `enabledKeyStates`    | Array of Key States that the module should handle.  <br />*Default:* `KEY_PRESSED` & `KEY_LONGPRESSED`<br />
 *Available:* `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` (these require `evdev.rawMode`) to be true to receive events.
-| `handleKeys`          | Array of additional keys to handle in this module above the standard set,  <br / > Reference [Mousetrap API](https://craig.is/killing/mice) for the available key enumerations.
+| `handleKeys`          | Array of additional keys to handle in this module above the standard set,  <br /> Reference [Mousetrap API](https://craig.is/killing/mice) for the available key enumerations.
 | `disableKeys`         | Array of keys to ignore from the default set.
 | `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
 | `endableRelayServer`  | Enables non-"KEYPRESS" HTTP GET notifications to be passed through to other modules when received on the "Notify" server. Useful for enabling 3rd party communication with other modules. <br />*Default:* `true` <br />*Requires:* `enableNotifyServer: true`.
-| 
-```
+| ```
 evdev: { enabled: true,
          eventPath:'',
          disableGrab: false,
          longPressDuration: 0.7,
          rawMode: false } 
-```
-| Configuration options for the `python-evdev` daemon. <br />
+``` | Configuration options for the `python-evdev` daemon. <br />
 | `eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
 | `disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
 | `longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
