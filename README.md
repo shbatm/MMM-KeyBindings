@@ -137,16 +137,16 @@ The script has a normal mode, which waits for both a `KEY_DOWN` and a `KEY_UP` e
 
 The script runs using PM2 to monitor and reload if necessary.
 
-### Script Options
+#### Python Script Options
 All of the options below can be set using the module config except debug mode. This table provided for debugging purposes if you need to run the script stand-alone.
 
 | Arguement         | Description
 |-------------------|-----------------
-|`-e EVENTPATH`,<br />`--event EVENTPATH` | Path to the evdev event handler, e.g. /dev/input/event0
+|`-e EVENTPATH`, <br /> `--event EVENTPATH` | Path to the evdev event handler, e.g. /dev/input/event0
 | `-n`, `--no-grab`     | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Use -n to disable
 | `-r`, `--raw`         | Enables raw mode to send individual KEY_UP, KEY_DOWN, KEY_HOLD events instead of just KEY_PRESSED and KEY_LONGPRESSED.
-| `-l TIME`,<br />`--long-press-time TIME`  | Duration threshold between KEY_PRESSED and KEY_LONGPRESSED in seconds (as float). Default is 1.0s
-| `-s SERVER`,<br />`--server SERVER`   | Server URL to push events.
+| `-l TIME`, <br /> `--long-press-time TIME`  | Duration threshold between KEY_PRESSED and KEY_LONGPRESSED in seconds (as float). Default is 1.0s
+| `-s SERVER`, <br /> `--server SERVER`   | Server URL to push events.
 | `-d`, `--debug`    | Enables debugging mode which will print out any key events
 | `-v`, `--verbose`  | Enables verbose debugging mode which will print out more info. Requires `-d`, `--debug` flag
 
