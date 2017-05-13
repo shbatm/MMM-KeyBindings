@@ -10,7 +10,7 @@ The primary features are:
 2.  Captures input from a standard keyboard on the local server or a remote screen. Basic navigation keys are captured, but this can be changed in the config.
 3.  Creates a HTTP "Notify" server to allow module notifications to be sent via HTTP GET calls from an external source. See: [Why a Notify Server?](#WhyNotify)
 4.  Assigns Special Keys that can be used to perform various actions such as turing on/off the screen.
-5.  Special Keys are processed in a "queue" to allow multiple context-based assignments (e.g. one key will turn on the screen if it's off, otherwise it will open an On Screen Menu).
+5.  Special Keys are processed in a "queue" to allow multiple context-based assignments (e.g. one key will turn on the screen if it's off, otherwise it will open an On Screen Menu). See [Special Keys](#SpecialKeys) below.
 6.  Passes keys to other modules for action via notifcation.
 7.  Allows a module to "take focus", allowing other modules to ingore keypresses when a particular module has focus (e.g. in a pop-up menu).
 
@@ -47,38 +47,53 @@ You can then configure other modules to handle the key presses and, if necessary
 | `disableKeys`         | Array of keys to ignore from the default set.
 | `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
 | `endableRelayServer`  | Enables non-"KEYPRESS" HTTP GET notifications to be passed through to other modules when received on the "Notify" server. Useful for enabling 3rd party communication with other modules. <br />*Default:* `true` <br />*Requires:* `enableNotifyServer: true`.
-| ```
-evdev: { enabled: true,
-         eventPath:'',
-         disableGrab: false,
-         longPressDuration: 0.7,
-         rawMode: false } 
-``` | Configuration options for the `python-evdev` daemon. <br />
+| `evdev: { enabled: true,`<br />`eventPath:'',`<br />`disableGrab: false,`<br />`longPressDuration: 0.7,`<br />`rawMode: false }` | Configuration options for the `python-evdev` daemon. <br />
 | `eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
 | `disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
 | `longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
 | `rawMode` | Enables raw mode to send the individual `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` events.
+| `evdevKeymap`     | Map of the remote controls' key names (from `evtest`) to translate into standard keyboard event names. See Sample Key Map below.
+| `specialKeys`     | List of Keys and KeyStates that map to special functions that will be handled by this module. See [Special Keys](#SpecialKeys) below.
+| `extInterruptModes` | Array of "Modes" that can be set by assigning special keys. See [Special Keys](#SpecialKeys) below.
 
-        evdevKeymap: {  Home: "KEY_HOMEPAGE", 
-                        Enter: "KEY_KPENTER", 
-                        ArrowLeft: "KEY_LEFT", 
-                        ArrowRight: "KEY_RIGHT", 
-                        ArrowUp: "KEY_UP", 
-                        ArrowDown: "KEY_DOWN",
-                        Menu: "KEY_MENU", 
-                        MediaPlayPause: "KEY_PLAYPAUSE", 
-                        MediaNextTrack: "KEY_FASTFORWARD", 
-                        MediaPreviousTrack: "KEY_REWIND",
-                        Return: "KEY_BACK"},
-        specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
-                        screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
-                        screenPowerToggle: { KeyName:"", KeyState:"" },
-                        osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
-                        extInterrupt1: { KeyName: "", KeyState: "" },
-                        extInterrupt2: { KeyName: "", KeyState: "" },
-                        extInterrupt3: { KeyName: "", KeyState: "" },
-                     }, 
-        extInterruptModes: [],
+### Sample Key Map
+```
+evdevKeymap: {  
+    Home: "KEY_HOMEPAGE", 
+    Enter: "KEY_KPENTER", 
+    ArrowLeft: "KEY_LEFT", 
+    ArrowRight: "KEY_RIGHT", 
+    ArrowUp: "KEY_UP", 
+    ArrowDown: "KEY_DOWN",
+    Menu: "KEY_MENU", 
+    MediaPlayPause: "KEY_PLAYPAUSE", 
+    MediaNextTrack: "KEY_FASTFORWARD", 
+    MediaPreviousTrack: "KEY_REWIND",
+    Return: "KEY_BACK"
+},
+```
+
+### <a name="SpecialKeys"></a> Special Keys
+Special Keys are keys and keystate pairs which can be used to perform special functions within the module.  They are processed in a queue in the order listed in the configuration. The same key can be assigned to multiple special keys for context-based situations -- for example, you can turn on the screen if it's off; if it's already on, the same key can be used to open a menu or do something else.  If the Special Key doesn't need to be processed (e.g. turning on a screen, but the screen is already on), then it will be passed along like a normal key press.
+
+```
+specialKeys: {  
+    screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+    screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
+    screenPowerToggle: { KeyName:"", KeyState:"" },
+    osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+    extInterrupt1: { KeyName: "", KeyState: "" },
+    extInterrupt2: { KeyName: "", KeyState: "" },
+    extInterrupt3: { KeyName: "", KeyState: "" },
+}, 
+```
+
+#### External Mode Interrupt Keys
+Three of the special keys can be assigned to change the mode in combination with the `extInterruptModes` parameter.  For example, if you wanted the "KEY_MENU" key to always open a menu in another module and give that module focus, you could set:
+```
+    specialKeys: { extInterrupt1: { KeyName: "KEY_MENU", KeyState: "KEY_PRESSED" } }
+    extInterruptModes: ["MY_MODULES_MENU"],
+```
 
 ## <a name="HandlingKeys"></a>Handling Keys in Another Module
 
