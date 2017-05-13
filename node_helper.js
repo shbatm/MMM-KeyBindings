@@ -4,6 +4,8 @@
  * By shbatm
  * MIT Licensed.
  */
+ /* jshint node: true */
+ 
  "use strict";
 
 var NodeHelper = require("node_helper");
@@ -58,7 +60,7 @@ module.exports = NodeHelper.create({
         // expected args: evdev: { enabled: true, eventPath:'', disableGrab: false, 
         //                          longPressDuration: 1.0, rawMode: false }
         var daemonArgs = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
-                            "--", "--server", 'http://localhost:8080/' + this.name + '/notify', "--debug"];
+                            "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];
 
         if (("eventPath" in args) && args.eventPath) {
             daemonArgs.push('--event');
@@ -80,7 +82,7 @@ module.exports = NodeHelper.create({
             }
         }
 
-        // console.log(JSON.stringify(daemonArgs, null, 4));
+        console.log("Starting pm2 evdev:" + JSON.stringify(daemonArgs, null, 4));
         var daemon = spawn("pm2", daemonArgs);
 
 

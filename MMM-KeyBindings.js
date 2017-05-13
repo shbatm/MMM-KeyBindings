@@ -16,6 +16,7 @@ Module.register("MMM-KeyBindings", {
         handleKeys: [], // List of additional keys to handle in this module; blank == standard set
         disableKeys: [], // list of keys to ignore from the default set.
         enableNotifyServer: true,
+        endableRelayServer: true,
         evdev: {        enabled: true, 
                         eventPath:'', 
                         disableGrab: false, 
@@ -37,7 +38,11 @@ Module.register("MMM-KeyBindings", {
                         screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
                         screenPowerToggle: { KeyName:"", KeyState:"" },
                         osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+                        extInterrupt1: { KeyName: "", KeyState: "" },
+                        extInterrupt2: { KeyName: "", KeyState: "" },
+                        extInterrupt3: { KeyName: "", KeyState: "" },
                      }, 
+        extInterruptModes: [],
 
     },
 
@@ -109,7 +114,11 @@ Module.register("MMM-KeyBindings", {
 
             var payload = {};
             payload.KeyCode = e.key;
-            payload.KeyState = e.type;
+            if (this.config.evdev.rawMode) {
+                payload.KeyState = e.type;
+            } else {
+                payload.KeyState = "KEY_PRESSED";
+            }
             payload.CurrentMode = self.currentKeyPressMode;
             if (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) {
                 payload.Sender = "SERVER";
@@ -157,6 +166,24 @@ Module.register("MMM-KeyBindings", {
                 }
                 handled = true;
                 break;
+            case "extInterrupt1":
+                if (this.config.extInterruptModes.length > 0) {
+                    this.currentKeyPressMode = this.config.extInterruptModes[0];
+                    handled = true;
+                }
+                break;
+            case "extInterrupt2":
+                if (this.config.extInterruptModes.length > 1) {
+                    this.currentKeyPressMode = this.config.extInterruptModes[1];
+                    handled = true;
+                }
+                break;
+            case "extInterrupt3":
+                if (this.config.extInterruptModes.length > 2) {
+                    this.currentKeyPressMode = this.config.extInterruptModes[2];
+                    handled = true;
+                }
+                break;                            
             default:
                 handled = false;
         }
@@ -211,6 +238,9 @@ Module.register("MMM-KeyBindings", {
             if (this.config.enabledKeyStates.indexOf(payload.KeyState) > -1) {
                 this.handleEvDevKeyPressEvents(payload);
             }
+        }
+        if (this.config.endableRelayServer) {
+            this.sendNotification(notification, payload);
         }
     },
 
