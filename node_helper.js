@@ -49,18 +49,19 @@ module.exports = NodeHelper.create({
     },
 
     startPythonDaemon: function(args) {
+        var self = this;
         // Start the Python Daemon to capture input from FireTV Remote via Bluetooth
         // Python Daemon captures inputs using python-evdev and is configured to capture 
         // All events from '/dev/input/event0'.  Use `cat /proc/bus/input/devices` to find the 
         // correct handler to use.  You can also use `evtest /dev/input/event0` to monitor the output.
         // Note: to stop capturing input without shutting down the mirror, run the following from
         // a shell prompt: `python ~/MagicMirror/modules/MMM-KeyBindings/daemon.py stop`
-        var spawn = require('child_process').spawn;
-
         // expected args: evdev: { enabled: true, eventPath:'', disableGrab: false, 
         //                          longPressDuration: 1.0, rawMode: false }
-        var daemonArgs = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
-                            "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];
+        //var daemonArgs = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
+        //                    "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];
+
+        var daemonArgs = ["--server", 'http://localhost:8080/' + this.name + '/notify'];
 
         if (("eventPath" in args) && args.eventPath) {
             daemonArgs.push('--event');
@@ -83,19 +84,43 @@ module.exports = NodeHelper.create({
         }
 
         console.log("Starting pm2 evdev:" + JSON.stringify(daemonArgs, null, 4));
-        var daemon = spawn("pm2", daemonArgs);
+        // Old method of starting process with PM2, changing to use native code.
+        // var spawn = require('child_process').spawn;
+        // var daemon = spawn("pm2", daemonArgs);
 
+        // daemon.stderr.on('data', (data) => { 
+        //     console.error(`MMM-KeyBindings daemon stderr: ${data}`);
+        // });
 
-        daemon.stderr.on('data', (data) => { 
-            console.error(`MMM-KeyBindings daemon stderr: ${data}`);
-        });
+        // daemon.stdout.on('data', (data) => {
+        //     console.log(`MMM-KeyBindings daemon stdout: ${data}`);
+        // });
 
-        daemon.stdout.on('data', (data) => {
-            console.log(`MMM-KeyBindings daemon stdout: ${data}`);
-        });
+        // daemon.on('close', (code) => {
+        //     console.log(`MMM-KeyBindings daemon exited with code ${code}`);
+        // });
 
-        daemon.on('close', (code) => {
-            console.log(`MMM-KeyBindings daemon exited with code ${code}`);
+        var pm2 = require('pm2');
+        pm2.connect(function(err) {
+          if (err) {
+            console.error(err);
+            process.exit(2);
+          }
+
+          // Stops the Daemon if it's already started
+          pm2.stop('evdev', function(err, apps) {
+            if (err) { console.log(err); }
+          });
+          
+          pm2.start({
+            script    : require("path").resolve(__dirname,"evdev_daemon.py"),
+            name      : 'evdev',
+            args      : self.daemonArgs,
+            max_memory_restart : '100M'   // Optional: Restarts your app if it reaches 100Mo
+          }, function(err, apps) {
+            pm2.disconnect();   // Disconnects from PM2
+            if (err) { throw err; }
+          });
         });
 
         this.pythonDaemonEnabled = true;
