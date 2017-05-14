@@ -19,6 +19,9 @@
     "url": "https://github.com/shbatm/MMM-KeyBindings/issues"
   },
   "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
+  "dependencies": {
+    "pm2": "^2.4.0"
+  },
   "devDependencies": {
     "grunt": "latest",
     "grunt-eslint": "latest",
