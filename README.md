@@ -46,7 +46,7 @@ You can then configure other modules to handle the key presses and, if necessary
 | `disableKeys`         | Array of keys to ignore from the default set.
 | `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
 | `endableRelayServer`  | Enables non-"KEYPRESS" HTTP GET notifications to be passed through to other modules when received on the "Notify" server. Useful for enabling 3rd party communication with other modules. <br />*Default:* `true` <br />*Requires:* `enableNotifyServer: true`.
-| `evdev: { <br />enabled: true,`<br />`eventPath:'',`<br />`disableGrab: false,`<br />`longPressDuration: 0.7,`<br />`rawMode: false }` | Configuration options for the `python-evdev` daemon. <br />See below for details.
+| `evdev: { `<br />`enabled: true,`<br />`eventPath:'',`<br />`disableGrab: false,`<br />`longPressDuration: 0.7,`<br />`rawMode: false }` | Configuration options for the `python-evdev` daemon. <br />See below for details.
 | `evdev.eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
 | `evdev.disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
 | `evdev.longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
