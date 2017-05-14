@@ -41,8 +41,7 @@ You can then configure other modules to handle the key presses and, if necessary
 
 | Option                | Description
 |-----------------------|-----------
-| `enabledKeyStates`    | Array of Key States that the module should handle.  <br />*Default:* `KEY_PRESSED` & `KEY_LONGPRESSED`<br />
-*Available:* `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` (these require `evdev.rawMode`) to be true to receive events.
+| `enabledKeyStates`    | Array of Key States that the module should handle.  <br />*Default:* `KEY_PRESSED` & `KEY_LONGPRESSED`<br />*Available:* `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` (these require `evdev.rawMode`) to be true to receive events.
 | `handleKeys`          | Array of additional keys to handle in this module above the standard set,  <br /> Reference [Mousetrap API](https://craig.is/killing/mice) for the available key enumerations.
 | `disableKeys`         | Array of keys to ignore from the default set.
 | `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
