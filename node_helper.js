@@ -73,6 +73,10 @@ module.exports = NodeHelper.create({
         if (("rawMode" in args) && args.rawMode) {
             daemonArgs.push('--raw');
         }
+        if (("bluetooth" in args) && args.bluetooth) {
+            daemonArgs.push('--bluetooth');
+            daemonArgs.push(args.bluetooth);
+        }
         if ("longPressDuration" in args) {
             if (typeof args.longPressDuration === "number") {
                 daemonArgs.push('-l');

@@ -17,7 +17,8 @@ Module.register("MMM-KeyBindings", {
         disableKeys: [], // list of keys to ignore from the default set.
         enableNotifyServer: true,
         endableRelayServer: true,
-        evdev: {        enabled: true, 
+        evdev: {        enabled: true,
+                        bluetooth: "",
                         eventPath:'', 
                         disableGrab: false, 
                         longPressDuration: 0.7, 
