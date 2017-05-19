@@ -1,6 +1,6 @@
 {
   "name": "MMM-KeyBindings",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Module to provide keyboard or Bluetooth Remote Control key bindings to control various aspects of the MagicMirror through socket notifications",
   "main": "MMM-KeyBindings.js",
   "repository": {
