@@ -8,7 +8,7 @@ import time
 import logging
 import logging.config
 import signal
-from asyncore import file_dispatcher, loop
+from asyncore import file_dispatcher, loop, ExitNow
 import evdev  
 import json, requests
 import threading
@@ -55,6 +55,10 @@ class InputDeviceDispatcher(file_dispatcher):
         '''
         return False
 
+    def handle_error(self):
+        self.logger.debug("InputDeviceDispatcher Error.", exc_info=True)
+        raise ExitNow
+
     def handle_read(self):
         for event in self.recv():
             if event.type == evdev.ecodes.EV_KEY:
@@ -84,17 +88,27 @@ class InputDeviceDispatcher(file_dispatcher):
                 if self.args.raw_mode:  # Raw mode enabled, send everything
                     kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyStateName, 'Duration': round(keyPressDuration,4)})
                     payload = {'notification':'KEYPRESS','payload':kev_json}
-                    r = requests.get(self.args.server_url, params=payload)
-                    self.logger.debug("Calling url: %s\n%s", r.url, r)
+                    try:
+                        r = requests.get(self.args.server_url, params=payload)
+                        self.logger.debug("Calling url: %s\n%s", r.url, r)
+                    except ConnectionError:
+                        self.logger.warning("Connection Error. Could not connect to %s", self.args.server_url)
+                    except Exception as err:
+                        self.logger.error("Server Request Failed.", exc_info=True)
                 
-                self.logging.debug(kev.keycode + " " + str(kev.keystate) + '\n')
+                self.logger.debug(kev.keycode + " " + str(kev.keystate))
                     
                 if keyPressName != None:
                     kev_json = json.dumps({'KeyName': kev.keycode, 'KeyState': keyPressName, 'Duration': round(keyPressDuration,4)})
                     payload = {'notification':'KEYPRESS','payload':kev_json}
-                    r = requests.get(self.args.server_url, params=payload)
-                    self.logger.info("%s: %s, duration %.2f\n", kev.keycode, keyPressName, round(keyPressDuration,4))
-                    self.logger.debug("Calling url: %s\n%s", r.url, r)
+                    self.logger.info("%s: %s, duration %.2f", kev.keycode, keyPressName, round(keyPressDuration,4))
+                    try:
+                        r = requests.get(self.args.server_url, params=payload)
+                        self.logger.debug("Calling url: %s\n%s", r.url, r)
+                    except requests.exceptions.ConnectionError:
+                        self.logger.warning("Connection Error. Could not connect to %s", self.args.server_url)
+                    except requests.exceptions.RequestException as e:
+                        self.logger.error("Server Request Failed.", exc_info=True)
 
 class evdev_daemon(threading.Thread): 
     def __init__(self, args=None):
@@ -113,7 +127,7 @@ class evdev_daemon(threading.Thread):
             time.sleep(0.1)
 
         try:
-            self.logging.debug("Starting evdev listener on '%s'", self.args.event_path)
+            self.logger.debug("Starting evdev listener on '%s'", self.args.event_path)
             self.dev = evdev.InputDevice(self.args.event_path)
 
             if self.args.allow_grab:
@@ -121,34 +135,51 @@ class evdev_daemon(threading.Thread):
             
             self.listener = InputDeviceDispatcher(self.dev, self.args)
             loop()
-            self.logging.warning("evdev listener on '%s' exited.", self.args.event_path)
+            self.logger.warning("evdev listener on '%s' exited.", self.args.event_path)
         except OSError as err:
             err_str = str(err)
             if err_str.find("No such file or directory") > 0:
                 # Restart and wait for the device to come back
                 self.logger.warning("'%s' doesn't exist. Restarting and waiting for it to return", self.args.event_path, exc_info=True)
-                self.run()
+                self.start()
             elif err_str.find("Permission denied") > 0:
-                self.logger.error('''%s. Restarting and trying again. A previous script may not have exited 
+                self.logger.warning('''%s. Restarting and trying again. A previous script may not have exited 
                                     properly, multiple instances may be running, or maybe try with '--no-grab'.
                                     ''', self.args.event_path, exc_info=True)
-                self.run()
-        except asyncore.ExitNow as err:
-            self.logger.warning("Bluetooth Device has disconnected.", exc_info=True)
+                time.sleep(2)
+                self.start()
+        except KeyboardInterrupt:
+            self.listener.close()
+        except ExitNow as err:
+            self.listener.close()
+            self.logger.warning("Daemon Stopped. Has Bluetooth Device disconnected?", exc_info=True)
+            if self.args and not self.args.bluetooth:
+                self.logger.debug("Bluetooth argument not provided. Attempting evdev daemon restart to wait for device to come back.")
+                time.sleep(2)
+                self.start()
         except:
             self.logger.error("Unexpected Error has occurred.", exc_info=True)
             sys.exit(1)
 
     def stop(self):
-        self.listener.close()
-        self.join()
+        try:
+            self.listener.close()
+        except OSError:
+            pass
+        #self.join()
 
 class dbusMonitor(object):
     def __init__(self, args=None):
         self.args = args
         self.dev = None
+        self.devices = {}
+        self.deviceID = None
+        self.deviceAlias = "Unknown Device"
+        if args and args.bluetooth:
+            self.deviceID = args.bluetooth.upper()
         self.logger = logging.getLogger(__name__)
-        self.daemon = evdev_daemon(args=args) 
+        self.daemon = None 
+        self.connected = False
 
         # get the system bus
         try:
@@ -156,69 +187,104 @@ class dbusMonitor(object):
             self.bus = dbus.SystemBus()
         except Exception as ex:
             self.logger.error("Unable to get the system dbus: '{0}'. Exiting."
-                          " Is dbus running?".format(ex.message), env_key=True)
+                          " Is dbus running?".format(ex.message), exc_info=True)
             sys.exit(1)
 
-    def check_connected(self, deviceID):
+    def load_devices(self):
+        om = dbus.Interface(bus.get_object("org.bluez", "/"),
+                "org.freedesktop.DBus.ObjectManager")
+        objects = om.GetManagedObjects()
+        for path, interfaces in objects.iteritems():
+            if "org.bluez.Device1" in interfaces:
+                self.devices[path] = interfaces["org.bluez.Device1"]
+        return self.devices
+
+
+    def check_connected(self):
         ''' Function to check if device is connected without waiting for an event.
             deviceID = String representing MAC Address of device to check
         '''
         btconnected = False
-        deviceID = deviceID.replace(":", "_")
+        deviceID_corr = self.deviceID.replace(":", "_")
+        self.devicePath = None
 
-        # Figure out the path to the headset
-        man = self.bus.get_object('org.bluez', '/')
-        iface = dbus.Interface(man, 'org.bluez.Manager')
-        adapterPath = iface.DefaultAdapter()
-        path = adapterPath + '/dev_' + deviceID
-        device = dbus.Interface(self.bus.get_object("org.bluez", path), "org.bluez.Device")
-        properties = device.GetProperties()
+        # Figure out the path to the device
+        manager = dbus.Interface(self.bus.get_object("org.bluez", "/"),
+                            "org.freedesktop.DBus.ObjectManager")
+        # bzmanager = dbus.Interface(self.bus.get_object("org.bluez", "/"),
+        #                      "org.bluez.Manager")
+        objects = manager.GetManagedObjects()
+        
+        # Section below will dump dbus data about all bluetooth devices if debug verbose enabled
+        self.logger.debug("Checking dbus for device %s...", self.deviceID)
+        dbus_detail_string = ""
+        for path in objects.keys():
+            dbus_detail_string += "[ %s ]\n" % (path)
+            if path.endswith(deviceID_corr):
+                self.devicePath = path
+                self.logger.info("Device %s found at %s.", self.deviceID, path)
+            
+            # Additional Debugging Information
+            if self.args.debug_mode and self.args.verbose:
+                interfaces = objects[path]
+                for interface in interfaces.keys():
+                    if interface in ["org.freedesktop.DBus.Introspectable",
+                                "org.freedesktop.DBus.Properties"]:
+                        continue
+                    dbus_detail_string += "    %s\n" % (interface)
+                    properties = interfaces[interface]
+                    for key in properties.keys():
+                        dbus_detail_string += "      %s = %s\n" % (key, properties[key])
 
-        if (property_name == "Connected"):
-            action = "connected" if value else "disconnected"
-            self.logger.warning("The device %s [%s] is %s " % (properties["Alias"],
-                  properties["Address"], action))
-            if action == "connected":
-                self.logger.warning("Device %s is already connected. Starting evdev Daemon...", deviceID)
+        self.logger.debug("org.bluez.Manager details:\n%s", dbus_detail_string)
+
+        if self.devicePath:
+            device = dbus.Interface(self.bus.get_object("org.bluez", self.devicePath), "org.freedesktop.DBus.Properties")
+            isConnected = device.Get("org.bluez.Device1","Connected")
+            self.deviceAlias = device.Get("org.bluez.Device1","Alias")
+            if (isConnected):
+                self.logger.debug("Device %s is already connected. Starting evdev Daemon...", self.deviceID)
                 self.btconnected = True
+                self.daemon = evdev_daemon(args=self.args)
                 self.daemon.start()
 
         return btconnected
 
-
-    def device_property_changed_cb(self, property_name, value, path, interface):
-        device = dbus.Interface(bus.get_object("org.bluez", path), "org.bluez.Device")
-        properties = device.GetProperties()
-
-        if (property_name == "Connected"):
-            action = "connected" if value else "disconnected"
-            self.logger.warning("The device %s [%s] is %s " % (properties["Alias"],
-                  properties["Address"], action))
-            if action == "connected":
+    def properties_changed(self, interface, changed, invalidated, path):
+        if interface != "org.bluez.Device1":
+            return
+        self.logger.debug("Properties Changed for '%s': %s", path, changed)
+        correctDevice = (self.devicePath and path == self.devicePath) or (self.deviceID and path.endswith(self.deviceID.replace(":", "_")))
+        if correctDevice and (dbus.String(u'Connected') in changed):
+            connected = changed[dbus.String(u'Connected')] == dbus.Boolean(True, variant_level=1)
+            if connected:
+                self.logger.info("Bluetooth Device %s has connected. Starting evdev daemon...", self.deviceID)
+                self.daemon = evdev_daemon(args=self.args)
+                self.connected = True
                 self.daemon.start()
-            elif action == "disconnected":
-                self.daemon.stop()
-
-    def run(self):
-        # listen for signals on the Bluez bus
-        self.bus.add_signal_receiver(self.device_property_changed_cb, bus_name="org.bluez",
-                                signal_name="PropertyChanged",
-                                dbus_interface="org.bluez.Device",
-                                path_keyword="path", interface_keyword="interface")
-        try:
-            if self.args.bluetooth:
-                # Bluetooth device given. Will watch for bluetooth connect/disconnects.
-                self.check_connected(self.args.bluetooth)
-                mainloop = gobject.MainLoop()
-                mainloop.run()
             else:
-                # No bluetooth device passed, just have to watch the evdev only
-                self.daemon = evdev_daemon(args=args)
-                self.daemon.start()
-        except KeyboardInterrupt:
-            pass
-        except:
-            logger.error("Unable to run the gobject main loop", env_key=True)
+                self.logger.info("Bluetooth Device %s has disconnected. Stopping evdev daemon...", self.deviceID)
+                self.connected = False
+                self.daemon.stop()
+            
+    def run(self):
+        if self.args.bluetooth:
+            self.bus.add_signal_receiver(self.properties_changed,
+                    dbus_interface = "org.freedesktop.DBus.Properties",
+                    signal_name = "PropertiesChanged",
+                    arg0 = "org.bluez.Device1",
+                    path_keyword = "path")
+
+            self.logger.debug("Signal Receiver Attached.")
+            # Bluetooth device given. Will watch for bluetooth connect/disconnects.
+            self.connected = self.check_connected()
+
+            mainloop = gobject.MainLoop()
+            mainloop.run()
+        else:
+            # No bluetooth device passed, just have to watch the evdev only
+            self.logger.info("No bluetooth address passed, starting evdev daemon only")
+            self.daemon.start()
 
 def shutdown(signum, frame):
     dbusMonitor.mainloop.quit()
@@ -227,6 +293,8 @@ def main():
     """
     The application entry point
     """
+    app_name = os.path.splitext(os.path.basename(__file__))[0]
+    script_path = os.path.dirname(os.path.abspath(__file__))
 
     # shut down on a TERM signal
     signal.signal(signal.SIGTERM, shutdown)
@@ -294,19 +362,24 @@ def main():
     if args.debug_mode:
         if args.verbose:
             log_level = logging.DEBUG
-        else
+        else:
             log_level = logging.INFO
 
-    setup_logging(default_level=log_level)
+    setup_logging()
     logger = logging.getLogger(__name__)
+    logger.setLevel(log_level)
 
-    app_name = os.path.splitext(os.path.basename(__file__))[0]
-    script_path = os.path.dirname(os.path.abspath(__file__))
+    logger.info("Starting %s with logging level: %s", app_name, logger.getEffectiveLevel())
     
-    d = dbusMonitor(args)
-    d.run()
+    try:
+        d = dbusMonitor(args=args)
+        d.run()
+    except KeyboardInterrupt:
+        pass
+    except:
+        logger.error("Unable to run the gobject main loop", exc_info=True)
 
-    logger.warning("Shutting down %s" % app_name)
+    logger.info("Shutting down %s" % app_name)
     sys.exit(0)
 
 if __name__ == '__main__':

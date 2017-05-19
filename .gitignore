@@ -1,4 +1,4 @@
-npm-debug.log
+*.log
 *.pid
 core
 node_modules/
