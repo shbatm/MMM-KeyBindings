@@ -128,6 +128,7 @@ module.exports = NodeHelper.create({
         });
 
         this.pythonDaemonEnabled = true;
+	console.log("MMM-KeyBindings Python Daemon Started.");
     },
 
     handleEvDevKeyPressEvents: function(payload) {

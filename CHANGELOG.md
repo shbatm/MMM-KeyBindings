@@ -1,3 +1,9 @@
+## [1.0.2] - Minor Bug Fixes.
+
+Bug Fixes:
+
+* Daemon crashes if bluetooth parameter not provided.
+
 ## [1.0.1] - Updates to evdev daemon for monitoring events.
 
 Bug Fixes:

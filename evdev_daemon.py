@@ -284,6 +284,7 @@ class dbusMonitor(object):
         else:
             # No bluetooth device passed, just have to watch the evdev only
             self.logger.info("No bluetooth address passed, starting evdev daemon only")
+            self.daemon = evdev_daemon(args=self.args)
             self.daemon.start()
 
 def shutdown(signum, frame):
