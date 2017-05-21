@@ -35,6 +35,7 @@ def setup_logging(
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
+        print("Couldn't find log config. Basic Level Enabled.")
 
 class InputDeviceDispatcher(file_dispatcher):
     _pendingKeyPress = None
@@ -296,6 +297,7 @@ def main():
     """
     app_name = os.path.splitext(os.path.basename(__file__))[0]
     script_path = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_path)
 
     # shut down on a TERM signal
     signal.signal(signal.SIGTERM, shutdown)
@@ -369,9 +371,8 @@ def main():
     setup_logging()
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
-
     logger.info("Starting %s with logging level: %s", app_name, logger.getEffectiveLevel())
-    
+
     try:
         d = dbusMonitor(args=args)
         d.run()

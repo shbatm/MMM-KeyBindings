@@ -1,4 +1,4 @@
-/* global Module, window, Mousetrap */
+/* global Module, window, Mousetrap, console */
 
 /* Magic Mirror
  * Module: MMM-KeyBindings
@@ -16,7 +16,8 @@ Module.register("MMM-KeyBindings", {
         handleKeys: [], // List of additional keys to handle in this module; blank == standard set
         disableKeys: [], // list of keys to ignore from the default set.
         enableNotifyServer: true,
-        endableRelayServer: true,
+        enableRelayServer: false,
+        enableMousetrap: false,
         evdev: {        enabled: true,
                         bluetooth: "",
                         eventPath:'', 
@@ -114,7 +115,7 @@ Module.register("MMM-KeyBindings", {
             }
 
             var payload = {};
-            payload.KeyCode = e.key;
+            payload.KeyName = e.key;
             if (this.config.evdev.rawMode) {
                 payload.KeyState = e.type;
             } else {
@@ -126,6 +127,7 @@ Module.register("MMM-KeyBindings", {
             } else {
                 payload.Sender = window.location.hostname + ":" + window.location.port;
             }
+            payload.Protocol = "mousetrap";
             self.sendNotification("KEYPRESS", payload);
             //console.log(payload);
         });
@@ -222,6 +224,7 @@ Module.register("MMM-KeyBindings", {
         // Add the sender to the payload (useful if you have multiple clients connected; 
         // the evdev keys only work on the main server)
         payload.Sender = "SERVER";
+        payload.Protocol = "evdev";
 
         // Standardize the name
         if (payload.KeyName in this.reverseKeyMap) {
@@ -240,14 +243,17 @@ Module.register("MMM-KeyBindings", {
                 this.handleEvDevKeyPressEvents(payload);
             }
         }
-        if (this.config.endableRelayServer) {
+        if (this.config.enableRelayServer) {
             this.sendNotification(notification, payload);
         }
     },
 
     notificationReceived: function (notification, payload, sender) {
         if (notification === "DOM_OBJECTS_CREATED") {
-            this.setupMousetrap();
+            if (this.config.enableMousetrap) {
+                console.log("Setting up Mousetrap keybindings.");
+                this.setupMousetrap();
+            }
         }
         if (notification === "ALL_MODULES_STARTED") {
             // do nothing

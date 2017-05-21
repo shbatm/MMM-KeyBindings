@@ -4,7 +4,7 @@
  * By shbatm
  * MIT Licensed.
  */
- /* jshint node: true */
+ /* jshint node: true, esversion: 6*/
  
  "use strict";
 
@@ -62,6 +62,7 @@ module.exports = NodeHelper.create({
         //                    "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];
 
         var daemonArgs = ["--server", 'http://localhost:8080/' + this.name + '/notify'];
+        var ENABLE_DAEMON_DEBUGGING = false;
 
         if (("eventPath" in args) && args.eventPath) {
             daemonArgs.push('--event');
@@ -86,6 +87,10 @@ module.exports = NodeHelper.create({
                 daemonArgs.push(parseFloat(args.longPressDuration));
             }
         }
+        if (ENABLE_DAEMON_DEBUGGING) {
+            daemonArgs.push("-d");
+            daemonArgs.push("-v");
+        }
 
         console.log("Starting pm2 evdev:" + JSON.stringify(daemonArgs, null, 4));
         // Old method of starting process with PM2, changing to use native code.
@@ -105,21 +110,35 @@ module.exports = NodeHelper.create({
         // });
 
         var pm2 = require('pm2');
-        pm2.connect(function(err) {
+
+        pm2.connect( (err) => {
           if (err) {
             console.error(err);
             process.exit(2);
           }
 
           // Stops the Daemon if it's already started
-          pm2.stop('evdev', function(err, apps) {
-            if (err) { console.log(err); }
+          pm2.list(function (err, list){        
+            var errCB = function(err, apps) {
+                if (err) { console.log(err); }
+            };
+
+            for (var proc in list) {
+                if ("name" in list[proc] && list[proc].name === "evdev") {
+                    if ("status" in list[proc] && list[proc].status === "online") {
+                      console.log("PM2: evdev already running. Stopping old instance...")
+                      pm2.stop('evdev', errCB);
+                    }
+                }
+            }
           });
           
           pm2.start({
             script    : require("path").resolve(__dirname,"evdev_daemon.py"),
             name      : 'evdev',
-            args      : self.daemonArgs,
+            interpreter: 'python',
+            interpreterArgs: '-u',
+            args      : daemonArgs,
             max_memory_restart : '100M'   // Optional: Restarts your app if it reaches 100Mo
           }, function(err, apps) {
             pm2.disconnect();   // Disconnects from PM2
