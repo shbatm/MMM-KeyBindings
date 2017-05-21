@@ -35,7 +35,20 @@ You can then configure other modules to handle the key presses and, if necessary
 ## Additional System Requirements
 
 * Python v2.7.x
-* `python-evdev` module (install via `pip install evdev`)
+* `python-evdev` module:
+    '''
+    sudo apt-get install python-dev python-pip gcc
+    sudo apt-get install linux-headers-$(uname -r)
+    sudo pip install evdev
+    '''
+* PM2 node module: run `npm install pm2` inside MMM-KeyBindings folder
+    - Note: if you already use PM2 to auto-launch MagicMirror, run the following to link the modules:
+    '''
+    cd ~/MagicMirror/modules/MMM-KeyBindings
+    npm link pm2
+    '''
+
+## Installation
 
 ## Configuration options
 
