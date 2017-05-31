@@ -242,8 +242,7 @@ Module.register("MMM-KeyBindings", {
             if (this.config.enabledKeyStates.indexOf(payload.KeyState) > -1) {
                 this.handleEvDevKeyPressEvents(payload);
             }
-        }
-        if (this.config.enableRelayServer) {
+        } else if (this.config.enableRelayServer) {
             this.sendNotification(notification, payload);
         }
     },
