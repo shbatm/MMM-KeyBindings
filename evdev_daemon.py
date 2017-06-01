@@ -16,6 +16,7 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 import gobject
+import re
 
 def setup_logging(
     default_path='pylogging.json',
@@ -171,6 +172,7 @@ class evdev_daemon(threading.Thread):
 
 class dbusMonitor(object):
     def __init__(self, args=None):
+        self.logger = logging.getLogger(__name__)
         self.args = args
         self.dev = None
         self.devices = {}
@@ -178,7 +180,6 @@ class dbusMonitor(object):
         self.deviceAlias = "Unknown Device"
         if args and args.bluetooth:
             self.deviceID = args.bluetooth.upper()
-        self.logger = logging.getLogger(__name__)
         self.daemon = None 
         self.connected = False
 
@@ -190,6 +191,32 @@ class dbusMonitor(object):
             self.logger.error("Unable to get the system dbus: '{0}'. Exiting."
                           " Is dbus running?".format(ex.message), exc_info=True)
             sys.exit(1)
+
+    def get_device_info(self, name):
+        ''' Function to get a Bluetooth Device's address and event
+        handler path. Will return an array with [0] = Bluetooth Address
+        and [1] = eventX Path
+        '''
+        with open("/proc/bus/input/devices","r") as f:
+            foundDev = False
+            btAddr = ""
+            evtPath = ""
+            for line in f:
+                if name in line:
+                    foundDev = True
+                if ("H: Handlers" in line) and foundDev and evtPath == "":
+                    evt = re.search(r'event[0-9]', line, re.M|re.I)
+                    if evt:
+                        evtPath = '/dev/input/' + evt.group()
+                if ("U: Uniq" in line) and foundDev and btAddr == "":
+                    btAddr = line.split("=",1)[1].replace('\n','')
+                if foundDev and btAddr and evtPath:
+                    break
+        f.close()
+        if btAddr:
+            self.deviceID = btAddr.upper()
+        if evtPath:
+            self.args.event_path = evtPath
 
     def load_devices(self):
         om = dbus.Interface(bus.get_object("org.bluez", "/"),
@@ -206,6 +233,10 @@ class dbusMonitor(object):
             deviceID = String representing MAC Address of device to check
         '''
         btconnected = False
+        if self.args and self.args.alias: 
+            self.get_device_info(self.args.alias)
+            self.logger.info("Got device info for alias %s--Addr=%s Path=%s", self.args.alias, self.deviceID, self.args.event_path)
+
         deviceID_corr = self.deviceID.replace(":", "_")
         self.devicePath = None
 
@@ -260,6 +291,7 @@ class dbusMonitor(object):
             connected = changed[dbus.String(u'Connected')] == dbus.Boolean(True, variant_level=1)
             if connected:
                 self.logger.info("Bluetooth Device %s has connected. Starting evdev daemon...", self.deviceID)
+                if self.args and self.args.alias: self.get_device_info(self.args.alias)
                 self.daemon = evdev_daemon(args=self.args)
                 self.connected = True
                 self.daemon.start()
@@ -269,7 +301,7 @@ class dbusMonitor(object):
                 self.daemon.stop()
             
     def run(self):
-        if self.args.bluetooth:
+        if self.args.bluetooth or self.args.alias:
             self.bus.add_signal_receiver(self.properties_changed,
                     dbus_interface = "org.freedesktop.DBus.Properties",
                     signal_name = "PropertiesChanged",
@@ -308,12 +340,28 @@ def main():
         epilog="That's all folks"
     )
     
+    parser.add_argument('-a','--alias',
+                    metavar='DEVICEALIAS',
+                    type=str,
+                    help='Alias/Name of Bluetooth Device.',
+                    default=None,
+                    dest='alias')        
+
     parser.add_argument('-e','--event',
                     metavar='EVENTPATH',
                     type=str,
-                    help='Path to the evdev event handler, e.g. /dev/input/event0',
+                    help='''Path to the evdev event handler, e.g. /dev/input/event0'
+                            Not required if -a|--alias is used''',
                     default='/dev/input/event0',
                     dest='event_path')
+
+    parser.add_argument('-b','--bluetooth',
+                    metavar='DEVICE',
+                    type=str,
+                    help='''MAC Address of Bluetooth Device.
+                            Not required if -a|--alias is used''',
+                    default=None,
+                    dest='bluetooth')        
     
     parser.add_argument('-n','--no-grab',
                     help='''By default, this script grabs all inputs from the device, which will block
@@ -340,13 +388,6 @@ def main():
                     help='Server URL to push events.',
                     default='http://localhost:8080/MMM-KeyBindings/notify',
                     dest='server_url')
-
-    parser.add_argument('-b','--bluetooth',
-                    metavar='DEVICE',
-                    type=str,
-                    help='MAC Address of Bluetooth Device.',
-                    default=None,
-                    dest='bluetooth')        
 
     parser.add_argument('-d','--debug',
                     help='Enables debugging mode which will print out any key events',

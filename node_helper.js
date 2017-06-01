@@ -64,19 +64,24 @@ module.exports = NodeHelper.create({
         var daemonArgs = ["--server", 'http://localhost:8080/' + this.name + '/notify'];
         var ENABLE_DAEMON_DEBUGGING = false;
 
-        if (("eventPath" in args) && args.eventPath) {
-            daemonArgs.push('--event');
-            daemonArgs.push(args.eventPath);
+        if (("alias" in args) && args.alias) {
+            daemonArgs.push('--alias');
+            daemonArgs.push('\"'+args.alias+'\"');
+        } else {
+            if (("eventPath" in args) && args.eventPath) {
+                daemonArgs.push('--event');
+                daemonArgs.push(args.eventPath);
+            }
+            if (("bluetooth" in args) && args.bluetooth) {
+                daemonArgs.push('--bluetooth');
+                daemonArgs.push(args.bluetooth);
+            }
         }
         if (("disableGrab" in args) && args.disableGrab) {
             daemonArgs.push('--no-grab');
         }
         if (("rawMode" in args) && args.rawMode) {
             daemonArgs.push('--raw');
-        }
-        if (("bluetooth" in args) && args.bluetooth) {
-            daemonArgs.push('--bluetooth');
-            daemonArgs.push(args.bluetooth);
         }
         if ("longPressDuration" in args) {
             if (typeof args.longPressDuration === "number") {

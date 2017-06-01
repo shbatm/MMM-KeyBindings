@@ -1,3 +1,9 @@
+## [1.1.0] - Allow use of Bluetooth Device Alias instead of address
+
+Changes:
+
+* Instead of assigning both the Bluetooth Device's address and the event path in the `config`, you can now assign the BT device alias as `evdev.alias: "Some Common Device Name"`.  The script will use this to automatically find the event path and address to use.  Advantage of this method is it overcomes the issue of multiple bluetooth devices connected, which can cause the event path to change across reboots.
+
 ## [1.0.2] - Minor Bug Fixes.
 
 Bug Fixes:

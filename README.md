@@ -59,12 +59,13 @@ You can then configure other modules to handle the key presses and, if necessary
 | `disableKeys`         | Array of keys to ignore from the default set.
 | `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
 | `endableRelayServer`  | Enables non-"KEYPRESS" HTTP GET notifications to be passed through to other modules when received on the "Notify" server. Useful for enabling 3rd party communication with other modules. <br />*Default:* `true` <br />*Requires:* `enableNotifyServer: true`.
-| `evdev: { `<br />`enabled: true,`<br />`bluetooth:'',`<br />`eventPath:'',`<br />`disableGrab: false,`<br />`longPressDuration: 0.7,`<br />`rawMode: false }` | Configuration options for the `python-evdev` daemon. <br />See below for details.
-| `evdev.bluetooth` | MAC Address of the Bluetooth Device to use - enables bluetooth device dbus connect/disconnect monitoring to make the daemon more responsive.<br /> *Default:* `''` (disabled).
-| `evdev.eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
-| `evdev.disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
-| `evdev.longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
-| `evdev.rawMode` | Enables raw mode to send the individual `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` events.
+| `evdev` | Configuration options for the `python-evdev` daemon. <br />See below for details.<br />*Example:*<br/>`evdev: { `<br />&nbsp;&nbsp;&nbsp;&nbsp;`enabled: true,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`alias: 'Amazon Fire TV Remote'`<br />&nbsp;&nbsp;&nbsp;&nbsp;`bluetooth:'',`<br />&nbsp;&nbsp;&nbsp;&nbsp;`eventPath:'',`<br />&nbsp;&nbsp;&nbsp;&nbsp;`disableGrab: false,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`longPressDuration: 0.7,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`rawMode: false`<br />`}`
+| &nbsp;&nbsp;&nbsp;&nbsp;`.alias` | Common Name / Alias of the Bluetooth Device to use.  This is what shows up in the Bluetooth menu of the GUI (e.g. '"Amazon Fire TV Remote"'). This enables bluetooth device dbus connect/disconnect monitoring to make the daemon more responsive.<br />*Note:* The `.bluetooth` and `.eventPath` details are not required if the Alias is used. <br />*Default:* `''` (disabled).
+| &nbsp;&nbsp;&nbsp;&nbsp;`.bluetooth` | MAC Address of the Bluetooth Device to use - enables bluetooth device dbus connect/disconnect monitoring to make the daemon more responsive.<br /> *Default:* `''` (disabled).
+| &nbsp;&nbsp;&nbsp;&nbsp;`.eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
+| &nbsp;&nbsp;&nbsp;&nbsp;`.disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
+| &nbsp;&nbsp;&nbsp;&nbsp;`.longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
+| &nbsp;&nbsp;&nbsp;&nbsp;`.rawMode` | Enables raw mode to send the individual `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` events.
 | `evdevKeymap`     | Map of the remote controls' key names (from `evtest`) to translate into standard keyboard event names. See Sample Key Map below.
 | `specialKeys`     | List of Keys and KeyStates that map to special functions that will be handled by this module. See [Special Keys](#SpecialKeys) below.
 | `extInterruptModes` | Array of "Modes" that can be set by assigning special keys. See [Special Keys](#SpecialKeys) below.
@@ -159,6 +160,9 @@ To setup the Fire Stick Remote with a Raspberry Pi Zero W or Raspberry Pi 3 (or 
 
 1. Put the remote into `Pairing` mode by holding the `Home` button for at least 10 seconds.
 2. Pair the device to your MM like a standard bluetooth device.
+
+**Note:**As of Version 1.1.0, you do not need the actual Bluetooth address or evdev event path, you only need the Alias (shown on "Name=" line below).
+
 3. Confirm the device is connected using `cat /proc/bus/input/devices`
     ```
     # cat /proc/bus/input/devices
@@ -206,6 +210,7 @@ All of the options below can be set using the module config except debug mode. T
 
 | Arguement         | Description
 |-------------------|-----------------
+|`-a DEVICEALIAS`, <br />`--alias DEVICEALIAS` | Common name of the Bluetooth Device. *Note:* `-e` and `-b` options are not required if `-a` is used.
 |`-e EVENTPATH`, <br /> `--event EVENTPATH` | Path to the evdev event handler, e.g. /dev/input/event0
 |`-b DEVICE`, <br /> `--bluetooth DEVICE` | MAC Address of the Bluetooth Device to bind to.
 | `-n`, `--no-grab`     | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Use -n to disable

@@ -19,6 +19,7 @@ Module.register("MMM-KeyBindings", {
         enableRelayServer: false,
         enableMousetrap: false,
         evdev: {        enabled: true,
+                        alias: "",
                         bluetooth: "",
                         eventPath:'', 
                         disableGrab: false, 
