@@ -53,6 +53,9 @@ Module.register("MMM-KeyBindings", {
 
     defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack'},
 
+    // Allow for control on muliple instances
+    instance: (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
+
     requiresVersion: "2.1.0", // Required version of MagicMirror
 
     start: function() {
@@ -63,7 +66,6 @@ Module.register("MMM-KeyBindings", {
         if (this.config.enableNotifyServer) {
             this.sendSocketNotification("ENABLE_RESTNOTIFYSERVER", this.name);
             if (this.config.evdev.enabled) {
-                console.log("startying python with evdev:" + this.config.evdev);
                 this.sendSocketNotification("ENABLE_PYTHONDAEMON", this.config.evdev);
             }
         }
@@ -123,11 +125,7 @@ Module.register("MMM-KeyBindings", {
                 payload.KeyState = "KEY_PRESSED";
             }
             payload.CurrentMode = self.currentKeyPressMode;
-            if (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) {
-                payload.Sender = "SERVER";
-            } else {
-                payload.Sender = window.location.hostname + ":" + window.location.port;
-            }
+            payload.Sender = self.instance;
             payload.Protocol = "mousetrap";
             self.sendNotification("KEYPRESS", payload);
             //console.log(payload);
@@ -250,7 +248,8 @@ Module.register("MMM-KeyBindings", {
 
     notificationReceived: function (notification, payload, sender) {
         if (notification === "DOM_OBJECTS_CREATED") {
-            if (this.config.enableMousetrap) {
+            if (this.config.enableMousetrap && !(this.config.enableNotifyServer && 
+                    this.instance === "SERVER")) {
                 console.log("Setting up Mousetrap keybindings.");
                 this.setupMousetrap();
             }

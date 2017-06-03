@@ -13,6 +13,7 @@ The primary features are:
 5.  Special Keys are processed in a "queue" to allow multiple context-based assignments (e.g. one key will turn on the screen if it's off, otherwise it will open an On Screen Menu). See [Special Keys](#SpecialKeys) below.
 6.  Passes keys to other modules for action via notifcation.
 7.  Allows a module to "take focus", allowing other modules to ingore keypresses when a particular module has focus (e.g. in a pop-up menu).
+8.  Allows for multiple instances of the MagicMirror to be open on different screens and be independently controlled.
 
 ## Using the module
 
@@ -129,7 +130,7 @@ payload: {  CurrentMode: "DEFAULT",  // "Mode" or "Focus" to respond to
 |`CurrentMode`  | The current "Mode" or "Focus". "DEFAULT" is the default mode. Your module should check the mode and respond appropriately. See Changing Modes below.
 |`KeyCode`      | The plain text name of the key that was pressed. Remote control keys are normalized to the Standard Keyboard Enumeration where possible.
 |`KeyState`     | The type of key press. Options are:<br />`KEY_PRESSED` - a normal key press.<br />`KEY_LONGPRESSED` - a long key press.<br />`KEY_UP` or `keyup` - key released*<br />`KEY_DOWN` or `keydown` - key pressed* down<br />`KEY_HOLD` - a key being held*<br />* Raw Mode Only
-|`Sender`       | The sender either "SERVER" if sent by evdev or a keyboard connected to the server running the mirror; otherwise it passes the hostname and port used to view the mirror.
+|`Sender`       | The sender either "SERVER" if sent by evdev or a keyboard connected to the server running the mirror; otherwise "LOCAL".
 
 ### Changing Focus
 A module can request focus or a "Mode" change one of two ways: 
@@ -142,6 +143,47 @@ A module can request focus or a "Mode" change one of two ways:
 2. Adding an External Interrupt Special Key (`extInterruptX`) in this module's config:<br />This has the advantage that it will short-circuit all other modules and the mode will be changed before sending out the keypress.
 
 All subsequent key presses will be sent with the new mode. Make sure to release the focus when done by sending a mode change of "DEFAULT" back.
+
+### Example Implementation from [MMM-Carousel (shbatm fork)](https://github.com/shbatm/MMM-Carousel)
+
+The example below allows for the arrow keys to move back and forth on the Carousel's slides.  It also will jump to the first slide on the `Home` key.
+
+#### In Config
+```js
+// MMM-KeyBindings mapping.
+keyBindingsMode: "DEFAULT",
+keyBindings: { NextSlide: "ArrowRight", PrevSlide: "ArrowLeft", Slide0: "Home" }
+```
+
+#### Setup Function (Called from `start:`)
+```js
+/* Setup Key Bindings for the MMM-KeyBindings module */
+setupKeyBindings: function () {
+    this.currentKeyPressMode = this.config.keyBindingsMode;
+    this.instance = (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL";
+    this.reverseKeyMap = {};
+    for (var eKey in this.config.keyBindings) {
+        if (this.config.keyBindings.hasOwnProperty(eKey)) {
+            this.reverseKeyMap[this.config.keyBindings[eKey]] = eKey;
+        }
+    }
+},
+```
+
+#### In `notificationReceived` Function
+```js
+if (notification === "KEYPRESS" && (this.currentKeyPressMode === this.config.keyBindingsMode) && payload.KeyName in this.reverseKeyMap && payload.Sender === this.instance) {
+    if (payload.KeyName === this.config.keyBindings.NextSlide) {
+        // Go to next slide
+    }
+    else if (payload.KeyName === this.config.keyBindings.PrevSlide) {
+        // Go to previous slide
+    }
+    else if (this.reverseKeyMap[payload.KeyName].startsWith("Slide")) {
+        // Jump to a slide
+    }
+}
+```
 
 ## Development Path
 This module was created as a stepping stone to allow other modules to be tweaked to respond to keyboard presses--mainly for navigation purposes. Please add any requests via the Issues for this repo.
