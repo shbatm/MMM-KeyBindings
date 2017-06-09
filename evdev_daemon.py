@@ -213,6 +213,8 @@ class dbusMonitor(object):
                 if foundDev and btAddr and evtPath:
                     break
         f.close()
+        if not foundDev:
+            self.logger.warning("Device info for %s not found. May not have connected yet.", self.args.alias)
         if btAddr:
             self.deviceID = btAddr.upper()
         if evtPath:
@@ -233,12 +235,16 @@ class dbusMonitor(object):
             deviceID = String representing MAC Address of device to check
         '''
         btconnected = False
+        self.devicePath = None
+        
         if self.args and self.args.alias: 
             self.get_device_info(self.args.alias)
-            self.logger.info("Got device info for alias %s--Addr=%s Path=%s", self.args.alias, self.deviceID, self.args.event_path)
+            self.logger.warning("Got device info for alias %s--Addr=%s Path=%s", self.args.alias, self.deviceID, self.args.event_path)
+        
+        if self.deviceID == None:
+            return btconnected
 
         deviceID_corr = self.deviceID.replace(":", "_")
-        self.devicePath = None
 
         # Figure out the path to the device
         manager = dbus.Interface(self.bus.get_object("org.bluez", "/"),
@@ -286,6 +292,12 @@ class dbusMonitor(object):
         if interface != "org.bluez.Device1":
             return
         self.logger.debug("Properties Changed for '%s': %s", path, changed)
+        
+        if (not self.deviceID) and self.args and self.args.alias:
+            time.sleep(2)
+            self.get_device_info(self.args.alias)
+            self.logger.warning("Got device info for alias %s--Addr=%s Path=%s", self.args.alias, self.deviceID, self.args.event_path)
+
         correctDevice = (self.devicePath and path == self.devicePath) or (self.deviceID and path.endswith(self.deviceID.replace(":", "_")))
         if correctDevice and (dbus.String(u'Connected') in changed):
             connected = changed[dbus.String(u'Connected')] == dbus.Boolean(True, variant_level=1)
@@ -412,7 +424,8 @@ def main():
     setup_logging()
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
-    logger.info("Starting %s with logging level: %s", app_name, logger.getEffectiveLevel())
+    logging.getLogger("urllib3").setLevel(log_level)
+    logger.warning("Starting %s with logging level: %s", app_name, logger.getEffectiveLevel())
 
     try:
         d = dbusMonitor(args=args)
