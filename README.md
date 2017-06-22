@@ -1,4 +1,4 @@
-# MMM-KeyBindings
+# MMM-KeyBindings - Remote and Keyboard Control for MagicMirror²
 
 This is a module for the [MagicMirror²](https://github.com/MichMich/MagicMirror/).
 
@@ -6,12 +6,13 @@ The MMM-KeyBindings Module is a helper module that provides a method for control
 
 The primary features are:
 
-1.  Captures input from an Amazon Fire Stick remote control using a python-based daemon to capture and process the input. See: [Why Fire Stick?](#WhyFire) and [Why python-evdev?](#WhyPython)
-2.  Captures input from a standard keyboard on the local server or a remote screen. Basic navigation keys are captured, but this can be changed in the config.
-3.  Creates a HTTP "Notify" server to allow module notifications to be sent via HTTP GET calls from an external source. See: [Why a Notify Server?](#WhyNotify)
-4.  Assigns Special Keys that can be used to perform various actions such as turing on/off the screen.
-5.  Special Keys are processed in a "queue" to allow multiple context-based assignments (e.g. one key will turn on the screen if it's off, otherwise it will open an On Screen Menu). See [Special Keys](#SpecialKeys) below.
-6.  Passes keys to other modules for action via notifcation.
+1.  Control from Amazon Fire Stick remote control or other bluetooth device. See: [Why Fire Stick?](https://github.com/shbatm/MMM-KeyBindings/wiki/Background-Information#WhyFire) and [Why python-evdev?](https://github.com/shbatm/MMM-KeyBindings/wiki/Background-Information#WhyPython)
+2.  Customizeable keyboard navigation and control.
+    *  Basic navigation keys are captured, but this can be changed in the config.
+3.  External control via HTTP GET calls.
+    * Creates a HTTP "Notify" server to allow module notifications to be sent  from an external source. See: [Why a Notify Server?](https://github.com/shbatm/MMM-KeyBindings/wiki/Background-Information#WhyNotify)
+4.  Context-based "Special Keys" can be used to perform various actions such as turing on/off the screen. See [Special Keys](#SpecialKeys).
+6.  Key Presses are sent other modules for action via notifcation.
 7.  Allows a module to "take focus", allowing other modules to ingore keypresses when a particular module has focus (e.g. in a pop-up menu).
 8.  Allows for multiple instances of the MagicMirror to be open on different screens and be independently controlled.
 
@@ -31,9 +32,18 @@ var config = {
 }
 ```
 
-You can then configure other modules to handle the key presses and, if necessary, request focus so only that module will respond to the keys (e.g. for a menu).  See [Handling Keys](#HandlingKeys)
+You can then configure other modules to handle the key presses and, if necessary, request focus so only that module will respond to the keys (e.g. for a menu).  See [Handling Keys in Other Modules](https://github.com/shbatm/MMM-KeyBindings/wiki/Integration-into-Other-Modules)
 
-## Additional System Requirements
+## Installation
+
+```shell
+cd ~/MagicMirror/modules
+git clone https://github.com/shbatm/MMM-KeyBindings
+```
+
+### Additional System Requirements
+
+When using a bluetooth device, the following are required.  Not needed for keyboard-only input.
 
 * Python v2.7.x
 * `python-evdev` module:
@@ -48,10 +58,12 @@ You can then configure other modules to handle the key presses and, if necessary
     cd ~/MagicMirror/modules/MMM-KeyBindings
     npm link pm2
     '''
+### <a name="RemoteSetup"></a>Setting Up The Remote
 
-## Installation
+See instructions [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Setup)
 
-## Configuration options
+## Configuration options 
+#### (samples below)
 
 | Option                | Description
 |-----------------------|-----------
@@ -71,7 +83,47 @@ You can then configure other modules to handle the key presses and, if necessary
 | `specialKeys`     | List of Keys and KeyStates that map to special functions that will be handled by this module. See [Special Keys](#SpecialKeys) below.
 | `extInterruptModes` | Array of "Modes" that can be set by assigning special keys. See [Special Keys](#SpecialKeys) below.
 
-### Sample Key Map
+### Sample Configurations
+
+#### Standard: Using FireStick Remote Locally and a Keyboard on Remote Browser
+
+The config below uses the default [special keys](SpecialKeys) for the Fire Stick remote: short-pressing the 'Home' button will turn on the screen if it's off. Long-pressing 'Home' will turn off the screen if it's on.
+
+```js
+{
+    module: 'MMM-KeyBindings',
+    config: {
+        evdev: {
+            enabled: true,
+            alias: "Amazon Fire TV Remote",
+            bluetooth: '74:75:48:6E:C3:CB',
+            eventPath: '',
+            disableGrab: false, 
+            longPressDuration: 0.7, 
+            rawMode: false
+        },
+        enableNotifyServer: true,
+        enableRelayServer: true,
+        enableMousetrap: true,
+    }
+},
+```
+
+#### Basic: Use Keyboard Only with Default Keys
+```js
+{
+    module: 'MMM-KeyBindings',
+    config: {
+        enableNotifyServer: false,
+        enableMousetrap: true,
+    }
+},
+```
+
+### Remote Control Key Map
+
+The following is the default key map for the Amazon Fire Stick remote. It maps keys to "Standard" keyboard key names for convenience. The incoming or outgoing names can be changed to suit your needs by adding a new copy of the keymap to the config.
+
 ```
 evdevKeymap: {  
     Home: "KEY_HOMEPAGE", 
@@ -88,8 +140,21 @@ evdevKeymap: {
 },
 ```
 
-### <a name="SpecialKeys"></a> Special Keys
-Special Keys are keys and keystate pairs which can be used to perform special functions within the module.  They are processed in a queue in the order listed in the configuration. The same key can be assigned to multiple special keys for context-based situations -- for example, you can turn on the screen if it's off; if it's already on, the same key can be used to open a menu or do something else.  If the Special Key doesn't need to be processed (e.g. turning on a screen, but the screen is already on), then it will be passed along like a normal key press.
+**If you are not using a Fire Stick Remote:** You may need to adjust the key assignments above to match your remote. See [Remote Setup](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Setup) for how to run `evtest` and display the key names for your remote/device.
+
+**Note about changing key names:** If for example, you wanted "KEY_RIGHT" from the bluetooth remote to simulate a "k" being pressed on a keyboard:
+
+1. Add the whole evdevKeymap above to your config section.
+2. Change `ArrowRight: "KEY_RIGHT"` to `k: "KEY_RIGHT"`
+3. If you want to also be able to use a keyboard when using a remote browser:
+    * Make sure `enableMousetrap: true` is in your config and then add: `handleKeys: [ 'k' ]` to tell Mousetrap to bind to the "k" key. This is required because by default Mousetrap only binds to the same keys as those in the key map above.
+
+### <a name="SpecialKeys"></a>Special Keys
+Special Keys are keys which can be used to perform special functions within the module.  They are pre-processed before sending a notification.
+
+They are processed in a queue in the order listed in the configuration. The same key can be assigned to multiple special keys for context-based situations -- for example, you can turn on the screen if it's off; if it's already on, the same key can be used to open a menu or do something else.  If the Special Key doesn't need to be processed (e.g. turning on a screen, but the screen is already on), then it will be passed along like a normal key press.
+
+Below is the default, which can be modified by adding a modified version in your config.
 
 ```
 specialKeys: {  
@@ -103,170 +168,11 @@ specialKeys: {
 }, 
 ```
 
-#### External Mode Interrupt Keys
-Three of the special keys can be assigned to change the mode in combination with the `extInterruptModes` parameter.  For example, if you wanted the "KEY_MENU" key to always open a menu in another module and give that module focus, you could set:
-```
-    specialKeys: { extInterrupt1: { KeyName: "KEY_MENU", KeyState: "KEY_PRESSED" } }
-    extInterruptModes: ["MY_MODULES_MENU"],
-```
-
 ## <a name="HandlingKeys"></a>Handling Keys in Another Module
 
-### Receiving Key Presses
-When a key is pressed, this module will send a module notification on with the following properties (if the key is not a special key, handled by this module):
-```js
-notification: "KEYPRESS"
-payload: {  CurrentMode: "DEFAULT",  // "Mode" or "Focus" to respond to
-            KeyCode: "Enter",        // The plain text key name pressed
-            KeyState: "KEY_PRESSED", // What happened
-            Sender: "SERVER",        // Source of the input.
-            Duration: 0.1234         // Duration of keypress (evdev only)
-            SpecialKeys: [],         // Internal Module Processing (evdev only)
-}
-```
-
-| Parameter     | Description
-|---------------|------------
-|`CurrentMode`  | The current "Mode" or "Focus". "DEFAULT" is the default mode. Your module should check the mode and respond appropriately. See Changing Modes below.
-|`KeyCode`      | The plain text name of the key that was pressed. Remote control keys are normalized to the Standard Keyboard Enumeration where possible.
-|`KeyState`     | The type of key press. Options are:<br />`KEY_PRESSED` - a normal key press.<br />`KEY_LONGPRESSED` - a long key press.<br />`KEY_UP` or `keyup` - key released*<br />`KEY_DOWN` or `keydown` - key pressed* down<br />`KEY_HOLD` - a key being held*<br />* Raw Mode Only
-|`Sender`       | The sender either "SERVER" if sent by evdev or a keyboard connected to the server running the mirror; otherwise "LOCAL".
-
-### Changing Focus
-A module can request focus or a "Mode" change one of two ways: 
-
-1. Send a notification to request it:
-    ```js
-    this.sendNotification("KEYPRESS_MODE_CHANGED","MODE NAME");
-    ```
-
-2. Adding an External Interrupt Special Key (`extInterruptX`) in this module's config:<br />This has the advantage that it will short-circuit all other modules and the mode will be changed before sending out the keypress.
-
-All subsequent key presses will be sent with the new mode. Make sure to release the focus when done by sending a mode change of "DEFAULT" back.
-
-### Example Implementation from [MMM-Carousel (shbatm fork)](https://github.com/shbatm/MMM-Carousel)
-
-The example below allows for the arrow keys to move back and forth on the Carousel's slides.  It also will jump to the first slide on the `Home` key.
-
-#### In Config
-```js
-// MMM-KeyBindings mapping.
-keyBindingsMode: "DEFAULT",
-keyBindings: { NextSlide: "ArrowRight", PrevSlide: "ArrowLeft", Slide0: "Home" }
-```
-
-#### Setup Function (Called from `start:`)
-```js
-/* Setup Key Bindings for the MMM-KeyBindings module */
-setupKeyBindings: function () {
-    this.currentKeyPressMode = this.config.keyBindingsMode;
-    this.instance = (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL";
-    this.reverseKeyMap = {};
-    for (var eKey in this.config.keyBindings) {
-        if (this.config.keyBindings.hasOwnProperty(eKey)) {
-            this.reverseKeyMap[this.config.keyBindings[eKey]] = eKey;
-        }
-    }
-},
-```
-
-#### In `notificationReceived` Function
-```js
-if (notification === "KEYPRESS" && (this.currentKeyPressMode === this.config.keyBindingsMode) && payload.KeyName in this.reverseKeyMap && payload.Sender === this.instance) {
-    if (payload.KeyName === this.config.keyBindings.NextSlide) {
-        // Go to next slide
-    }
-    else if (payload.KeyName === this.config.keyBindings.PrevSlide) {
-        // Go to previous slide
-    }
-    else if (this.reverseKeyMap[payload.KeyName].startsWith("Slide")) {
-        // Jump to a slide
-    }
-}
-```
+To handle key press events in your module, see this [wiki page](https://github.com/shbatm/MMM-KeyBindings/wiki/Integration-into-Other-Modules) and refer to [handleKeys.js](https://github.com/shbatm/MMM-KeyBindings/blob/master/handleKeys.js) for drop-in functions with detailed documentation.
 
 ## Development Path
 This module was created as a stepping stone to allow other modules to be tweaked to respond to keyboard presses--mainly for navigation purposes. Please add any requests via the Issues for this repo.
 
-* Develop On Screen Menu with options similar to [MMM-Remote-Control](https://github.com/Jopyth/MMM-Remote-Control) for controlling the underlying Mirror system (e.g. shutdown, restart, re-launch)
-* Fork [MMM-Carousel](https://github.com/barnabycolby/MMM-Carousel) to implement page navigation by key presses.
-
-## <a name="WhyFire"></a>Why Fire Stick?
-
-The Amazon Fire Stick remote controls are simple 6-button + D-pad remotes that will connect easily to the Raspberry Pi Zero W and Raspberry Pi 3 built-in Bluetooth and act as an input device with no additional software. They're also cheap, and I've picked them up on eBay for as little as $10. You don't just have to use a Fire Stick remote though, any bluetooth or wireless presentation "clicker" or remote would work great; you just need to update the key map in the config. See: [Setting Up the Remote](#RemoteSetup).
-
-<img src="https://raw.githubusercontent.com/shbatm/MMM-KeyBindings/master/img/fire_stick_remote.jpg" width="300">
-
-### <a name="RemoteSetup"></a>Setting Up The Remote
-To setup the Fire Stick Remote with a Raspberry Pi Zero W or Raspberry Pi 3 (or any other device with bluetooth) ([source](http://openelec.tv/forum/104-bluetooth-remotes/75420-fire-tv-stick-remote-with-raspberry-pi)):
-
-1. Put the remote into `Pairing` mode by holding the `Home` button for at least 10 seconds.
-2. Pair the device to your MM like a standard bluetooth device.
-
-**Note:**As of Version 1.1.0, you do not need the actual Bluetooth address or evdev event path, you only need the Alias (shown on "Name=" line below).
-
-3. Confirm the device is connected using `cat /proc/bus/input/devices`
-    ```
-    # cat /proc/bus/input/devices
-    I: Bus=0005 Vendor=1949 Product=0404 Version=011b
-    N: Name="Amazon Fire TV Remote"
-    P: Phys=00:1a:7d:da:71:13
-    S: Sysfs=/devices/platform/bcm2708_usb/usb1/1-1/1-1.3/1-1.3:1.0/bluetooth/hci0/hci0:71/0005:1949:0404.0001/input/input0
-    U: Uniq=a0:02:dc:e0:f9:d7
-    H: Handlers=kbd event0 
-    B: PROP=0
-    B: EV=10001b
-    B: KEY=10000 1110 40000800 1681 0 0 0
-    B: ABS=100 0
-    B: MSC=10
-    ```
-    Note the "Handlers" line: your `evdev_path` will be `/dev/input/event0` in this case.
-4. Test the device and get the key map by using `evtest` (may need to install using `sudo apt-get install evtest`):
-    ```
-    # evtest /dev/input/event0
-    Input driver version is 1.0.1
-    Input device ID: bus 0x5 vendor 0x1949 product 0x404 version 0x11b
-    Input device name: "Amazon Fire TV Remote"
-    Supported events:
-      Event type 0 (EV_SYN)
-      Event type 1 (EV_KEY)
-        Event code 96 (KEY_KPENTER)
-        Event code 103 (KEY_UP)
-    ...
-    ```
-
-## <a name="WhyPython"></a>Why python-evdev?
-
-This module uses a separate Python script that runs in the background on the server and monitors the input device file for events. This method is used to capture input from the remote because (a) not all buttons are passed to the browser as keyboard events and (b) some that do get passed to the browser can't have their default function overridden.  Initially, the plan was to just create a module to capture keystrokes in the browser via pure JS; however, only the directional pad of the remote was passed as keystrokes. In addition, not only would the "Home" button not appear as a key press, it would also re-direct to the browser's homepage.
-
-The method used in this module uses `python-evdev`, a python module which hooks into `evdev`, a Linux system subprocess that can receive events from an input device, such as the remote (or standard keyboards and mice). 
-
-The script in this module runs in the background and monitors for input events via the input device handler's event file. It then processes these events as key presses and sends them to the MagicMirror via an HTTP GET call to the "Notify Server".
-
-The script has a normal mode, which waits for both a `KEY_DOWN` and a `KEY_UP` event and then sends a `KEY_PRESSED` notification to the Mirror. It will also monitor the duration of the key press and will send `KEY_LONGPRESSED` if the button was held for longer than the set threshold.  This is useful for performing different tasks based on short and long key presses.  `rawMode` can also be enabled to send the individual `KEY_DOWN`, `KEY_UP`, and `KEY_HOLD` events to the Mirror.
-
-The script runs using PM2 to monitor and reload if necessary.
-
-#### Python Script Options
-All of the options below can be set using the module config except debug mode. This table provided for debugging purposes if you need to run the script stand-alone.
-
-| Arguement         | Description
-|-------------------|-----------------
-|`-a DEVICEALIAS`, <br />`--alias DEVICEALIAS` | Common name of the Bluetooth Device. *Note:* `-e` and `-b` options are not required if `-a` is used.
-|`-e EVENTPATH`, <br /> `--event EVENTPATH` | Path to the evdev event handler, e.g. /dev/input/event0
-|`-b DEVICE`, <br /> `--bluetooth DEVICE` | MAC Address of the Bluetooth Device to bind to.
-| `-n`, `--no-grab`     | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Use -n to disable
-| `-r`, `--raw`         | Enables raw mode to send individual KEY_UP, KEY_DOWN, KEY_HOLD events instead of just KEY_PRESSED and KEY_LONGPRESSED.
-| `-l TIME`, <br /> `--long-press-time TIME`  | Duration threshold between KEY_PRESSED and KEY_LONGPRESSED in seconds (as float). Default is 1.0s
-| `-s SERVER`, <br /> `--server SERVER`   | Server URL to push events.
-| `-d`, `--debug`    | Enables debugging mode which will print out any key events
-| `-v`, `--verbose`  | Enables verbose debugging mode which will print out more info. Requires `-d`, `--debug` flag
-
-## <a name="WhyNotify"></a>Why a Notify Server?
-
-First, what is a "Notify" server?  This is simply an extra route added to the MagicMirror which takes in URL based notifications in the following form:
-```
-HTTP GET: http://localhost:8080/MMM-KeyBindings/notify?notification=##NOTIFICATION-TITLE##&payload=##JSON.STRINGIFY'D-PAYLOAD##
-```
-
-The purpose of the "Notify" server is two-fold: (1) it allows the python daemon to communicate easily with the MagicMirror and (2) if `enableRelayServer` is enabled in the config, it will accept URL notifcations and re-broadcast them internally to other modules.  This is useful for controlling other modules from an external source such as through an [ISY](https://www.universal-devices.com/residential/isy994i-series/) [Network Resources](https://wiki.universal-devices.com/index.php?title=ISY-994i_Series_INSTEON:Networking#Network_Resources).
+**Using this module?** View a list of all modules that support MMM-KeyBindings on the wiki [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Supported-Modules).

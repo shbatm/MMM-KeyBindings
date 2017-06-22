@@ -21,15 +21,5 @@
   "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "dependencies": {
     "pm2": "^2.4.0"
-  },
-  "devDependencies": {
-    "grunt": "latest",
-    "grunt-eslint": "latest",
-    "grunt-jsonlint": "latest",
-    "grunt-markdownlint": "^1.0.13",
-    "grunt-stylelint": "latest",
-    "grunt-yamllint": "latest",
-    "stylelint-config-standard": "latest",
-    "time-grunt": "latest"
   }
 }
