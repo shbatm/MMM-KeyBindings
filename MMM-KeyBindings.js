@@ -1,5 +1,4 @@
-/* global Module, window, Mousetrap, console */
-
+/* global document, Module, window, Mousetrap, console */
 /* Magic Mirror
  * Module: MMM-KeyBindings
  *
@@ -40,7 +39,7 @@ Module.register("MMM-KeyBindings", {
         specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
                         screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
                         screenPowerToggle: { KeyName:"", KeyState:"" },
-                        osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+                        osdToggle: { KeyName:"", KeyState:"" },
                         extInterrupt1: { KeyName: "", KeyState: "" },
                         extInterrupt2: { KeyName: "", KeyState: "" },
                         extInterrupt3: { KeyName: "", KeyState: "" },
@@ -49,9 +48,9 @@ Module.register("MMM-KeyBindings", {
 
     },
 
-    defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack'],
+    defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack', 'menu'],
 
-    defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack'},
+    defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack', 93:'menu'},
 
     // Allow for control on muliple instances
     instance: (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
