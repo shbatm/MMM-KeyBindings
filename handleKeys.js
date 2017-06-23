@@ -8,7 +8,7 @@
  *  These is a basic implementation, expand as needed.
  *
  */
-(() => { 
+({ 
     // DO NOT COPY ABOVE THIS LINE (for future modulization)
 
     /*** defaults ***
@@ -27,7 +27,7 @@
             Right: "ArrowRight", 
             Left: "ArrowLeft", 
             /* ... */
-        }
+        },
         
         /*** OPTIONAL ***/
         /*  When using muliple instances (i.e. the screen connected
@@ -79,7 +79,7 @@
      *
      */
     setupKeyBindings: function() {
-        this.currentKeyPressMode = this.config.keyBindingsMode;
+        this.currentKeyPressMode = "DEFAULT";
         if (typeof this.config.kbMultiInstance === undefined) {
             this.config.kbMultiInstance = true;
         }
@@ -113,7 +113,7 @@
         }
 
         // Uncomment line below for diagnostics & to confirm keypresses are being recieved
-        // if (notification === "KEYPRESS") { console.log(payload) };
+        // if (notification === "KEYPRESS") { console.log(payload); }
 
         // Validate Keypresses
         if (notification === "KEYPRESS" &&
@@ -193,4 +193,4 @@
     },    
 
     // DO NOT COPY BELOW THIS LINE
-})();
+});
