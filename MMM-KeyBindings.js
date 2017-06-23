@@ -35,7 +35,8 @@ Module.register("MMM-KeyBindings", {
                         MediaPlayPause: "KEY_PLAYPAUSE", 
                         MediaNextTrack: "KEY_FASTFORWARD", 
                         MediaPreviousTrack: "KEY_REWIND",
-                        Return: "KEY_BACK"},
+                        Return: "KEY_BACK"
+                    },
         specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
                         screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
                         screenPowerToggle: { KeyName:"", KeyState:"" },
@@ -49,6 +50,9 @@ Module.register("MMM-KeyBindings", {
     },
 
     defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack', 'menu'],
+
+    // Like evdevKeyMap but for correcting mousetrap keys if needed:
+    mousetrapKeyMap: { ContextMenu: "Menu" },
 
     defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack', 93:'menu'},
 
@@ -118,6 +122,12 @@ Module.register("MMM-KeyBindings", {
 
             var payload = {};
             payload.KeyName = e.key;
+
+            // Standardize the name
+            if (payload.KeyName in this.mousetrapKeyMap) {
+                payload.KeyName = this.mousetrapKeyMap[payload.KeyName];
+            }
+
             if (this.config.evdev.rawMode) {
                 payload.KeyState = e.type;
             } else {
