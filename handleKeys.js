@@ -20,12 +20,12 @@
         /*** MMM-KeyBindings STANDARD MAPPING ***/
         /* Add the "mode" you would like to respond to */
         keyBindingsMode: "DEFAULT",
-        keyBindings: { 
+        keyBindings: {
             /* Add each key you want to respond to in the form:
              *      yourKeyName: "KeyName_from_MMM-KeyBindings"
              */
-            Right: "ArrowRight", 
-            Left: "ArrowLeft", 
+            Right: "ArrowRight",
+            Left: "ArrowLeft",
             /* ... */
         },
         
@@ -44,7 +44,7 @@
          *  
          */
         kbMultiInstance: true,
-        
+
         /* If you would like your module to "take focus" when a
          * particular key is pressed change the keyBindingsMode
          * setting to "MYKEYWORD" and add a "keyBindingsTakeFocus"
@@ -64,6 +64,8 @@
          *
          */
         keyBindingsTakeFocus: "Enter",
+        /* OR AS AN OBJECT: */
+        keyBindingsTakeFocus: { KeyName: "Enter", KeyState: "KEY_LONGPRESSED" }
     },
 
     /*** setupKeyBindings ***
@@ -116,22 +118,34 @@
         // if (notification === "KEYPRESS") { console.log(payload); }
 
         // Validate Keypresses
-        if (notification === "KEYPRESS" &&
-            (this.currentKeyPressMode === this.config.keyBindingsMode) &&
-            payload.KeyName in this.reverseKBMap &&
-            ((this.config.kbMultiInstance && payload.Sender === this.kbInstance) || 
-               !this.config.kbMultiInstance)) {
-
+        if (notification === "KEYPRESS" && this.currentKeyPressMode === this.config.keyBindingsMode) {
+            if (this.config.kbMultiInstance && payload.Sender !== this.kbInstance) {
+                return false; // Wrong Instance
+            }
+            if (!(payload.KeyName in this.reverseKBMap)) {
+                return false; // Not a key we listen for
+            }
             this.validKeyPress(payload);
             return true;
         }
 
-        // Focus key pressed, take focus.
-        if (notification === "KEYPRESS" && ("keyBindingsTakeFocus" in this.config) &&
-            payload.KeyName === this.config.keyBindingsTakeFocus &&
-            this.currentKeyPressMode !== this.config.keyBindingsMode &&
-            ((this.config.kbMultiInstance && payload.Sender === this.kbInstance) || 
-               !this.config.kbMultiInstance)) {
+        // Test for focus key pressed and need to take focus:
+        if (notification === "KEYPRESS" && ("keyBindingsTakeFocus" in this.config)) {
+            if (this.currentKeyPressMode === this.config.keyBindingsMode) {
+                return false; // Already have focus.
+            }
+            if (this.config.kbMultiInstance && payload.Sender !== this.kbInstance) {
+                return false; // Wrong Instance
+            }
+            if (typeof this.config.keyBindingsTakeFocus === "object") {
+                if (this.config.keyBindingsTakeFocus.KeyPress !== payload.KeyPress ||
+                    this.config.keyBindingsTakeFocus.KeyState !== payload.KeyState) {
+                    return false; // Wrong KeyName/KeyPress Combo
+                }
+            } else if (typeof this.config.keyBindingsTakeFocus === "string" &&
+                payload.KeyName !== this.config.keyBindingsTakeFocus) {
+                return false; // Wrong Key;
+            }
 
             this.keyPressFocusReceived();
             return true;
@@ -139,7 +153,6 @@
 
         return false;
     },
-
     /*** validKeyPress ***
      *
      *   Add function below to your moduleName.js
@@ -170,11 +183,11 @@
      *
      */
     keyPressFocusReceived: function(kp) {
-        console.log(this.name + "HAS FOCUS!");            
+        console.log(this.name + "HAS FOCUS!");
         this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.keyBindingsMode);
         this.currentKeyPressMode = this.config.keyBindingsMode;
         // DO ANYTHING YOU NEED
-    },    
+    },
 
     /*** OPTIONAL: keyPressReleaseFocus ***
      *
@@ -187,10 +200,10 @@
      */
     keyPressReleaseFocus: function() {
         console.log(this.name + "HAS RELEASED FOCUS!");
-        this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT"); 
+        this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
         this.currentKeyPressMode = "DEFAULT";
         // DO ANYTHING YOU NEED
-    },    
+    },
 
     // DO NOT COPY BELOW THIS LINE
 });

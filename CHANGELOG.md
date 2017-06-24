@@ -1,3 +1,9 @@
+## [1.1.1] - Documentation Update & Mousetrap Improvements
+
+* Improvements in Mousetrap bindings for standard keyboard keypresses
+* Updated `handleKeys.js` document for including handling in other modules.
+* Removed On Screen Display (OSD) code in favor of using [MMM-OnScreenMenu](https://github.com/shbatm/MMM-OnScreenMenu) with KeyBindings integration.
+
 ## [1.1.0] - Allow use of Bluetooth Device Alias instead of address
 
 Changes:

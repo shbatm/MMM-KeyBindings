@@ -1,13 +1,11 @@
-/* global Module, window, Mousetrap, console */
-
+/* global document, Module, window, Mousetrap, console */
 /* Magic Mirror
  * Module: MMM-KeyBindings
  *
  * By shbatm
  * MIT Licensed.
  */
- "use strict";
-
+/* jshint esversion:6 */
 
 Module.register("MMM-KeyBindings", {
     defaults: {
@@ -36,11 +34,12 @@ Module.register("MMM-KeyBindings", {
                         MediaPlayPause: "KEY_PLAYPAUSE", 
                         MediaNextTrack: "KEY_FASTFORWARD", 
                         MediaPreviousTrack: "KEY_REWIND",
-                        Return: "KEY_BACK"},
+                        Return: "KEY_BACK"
+                    },
         specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
                         screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
                         screenPowerToggle: { KeyName:"", KeyState:"" },
-                        osdToggle: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
+                        osdToggle: { KeyName:"", KeyState:"" },
                         extInterrupt1: { KeyName: "", KeyState: "" },
                         extInterrupt2: { KeyName: "", KeyState: "" },
                         extInterrupt3: { KeyName: "", KeyState: "" },
@@ -49,9 +48,18 @@ Module.register("MMM-KeyBindings", {
 
     },
 
-    defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack'],
+    defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack', 'menu'],
 
-    defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack'},
+    // Like evdevKeyMap but for correcting mousetrap keys if needed:
+    mousetrapKeyMap: { ContextMenu: "Menu" },
+
+    defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack', 93:'menu'},
+
+    /* Some special keyboard keys do stuff on KeyUp, 
+     * by default Mousetrap binds to keydown or keypress.
+     * Keys in this list will be bound to 'keyUp' just to call "handleDefault"
+     */ 
+    mousetrapSquashKeyUp: ['home', 'menu'],
 
     // Allow for control on muliple instances
     instance: (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
@@ -79,8 +87,6 @@ Module.register("MMM-KeyBindings", {
                 this.reverseKeyMap[this.config.evdevKeymap[eKey]] = eKey;
             }
         }
-
-        // Nothing else to do...
     },
 
     getScripts: function () {
@@ -119,6 +125,12 @@ Module.register("MMM-KeyBindings", {
 
             var payload = {};
             payload.KeyName = e.key;
+
+            // Standardize the name
+            if (payload.KeyName in this.mousetrapKeyMap) {
+                payload.KeyName = this.mousetrapKeyMap[payload.KeyName];
+            }
+
             if (this.config.evdev.rawMode) {
                 payload.KeyState = e.type;
             } else {
@@ -130,6 +142,12 @@ Module.register("MMM-KeyBindings", {
             self.sendNotification("KEYPRESS", payload);
             //console.log(payload);
         });
+
+        // Squash bad actors:
+        Mousetrap.bind(this.mousetrapSquashKeyUp, (e) => {
+            e.preventDefault();
+            return false;
+        }, 'keyup');
     },
 
 
@@ -159,13 +177,7 @@ Module.register("MMM-KeyBindings", {
         // console.log("Current Payload: " + JSON.stringify(payload, null, 4));
         switch (payload.SpecialKeys[0]) {
             case "osdToggle":
-                if (this.currentKeyPressMode === "DEFAULT") {
-                    console.log("Showing OSD"); // !TODO: Actually have an OSD menu
-                    this.currentKeyPressMode = this.name + "_OSD";
-                } else if (this.currentKeyPressMode === this.name + "_OSD") {
-                    console.log("Hiding OSD"); // !TODO: Actually have an OSD menu
-                    this.currentKeyPressMode = "DEFAULT";
-                }
+                // Depreciated, use MMM-OnScreenMenu
                 handled = true;
                 break;
             case "extInterrupt1":
