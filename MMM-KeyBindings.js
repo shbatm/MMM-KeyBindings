@@ -5,8 +5,7 @@
  * By shbatm
  * MIT Licensed.
  */
- "use strict";
-
+/* jshint esversion:6 */
 
 Module.register("MMM-KeyBindings", {
     defaults: {
@@ -56,6 +55,12 @@ Module.register("MMM-KeyBindings", {
 
     defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack', 93:'menu'},
 
+    /* Some special keyboard keys do stuff on KeyUp, 
+     * by default Mousetrap binds to keydown or keypress.
+     * Keys in this list will be bound to 'keyUp' just to call "handleDefault"
+     */ 
+    mousetrapSquashKeyUp: ['home', 'menu'],
+
     // Allow for control on muliple instances
     instance: (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
 
@@ -82,8 +87,6 @@ Module.register("MMM-KeyBindings", {
                 this.reverseKeyMap[this.config.evdevKeymap[eKey]] = eKey;
             }
         }
-
-        // Nothing else to do...
     },
 
     getScripts: function () {
@@ -139,6 +142,12 @@ Module.register("MMM-KeyBindings", {
             self.sendNotification("KEYPRESS", payload);
             //console.log(payload);
         });
+
+        // Squash bad actors:
+        Mousetrap.bind(this.mousetrapSquashKeyUp, (e) => {
+            e.preventDefault();
+            return false;
+        }, 'keyup');
     },
 
 
@@ -168,13 +177,7 @@ Module.register("MMM-KeyBindings", {
         // console.log("Current Payload: " + JSON.stringify(payload, null, 4));
         switch (payload.SpecialKeys[0]) {
             case "osdToggle":
-                if (this.currentKeyPressMode === "DEFAULT") {
-                    console.log("Showing OSD"); // !TODO: Actually have an OSD menu
-                    this.currentKeyPressMode = this.name + "_OSD";
-                } else if (this.currentKeyPressMode === this.name + "_OSD") {
-                    console.log("Hiding OSD"); // !TODO: Actually have an OSD menu
-                    this.currentKeyPressMode = "DEFAULT";
-                }
+                // Depreciated, use MMM-OnScreenMenu
                 handled = true;
                 break;
             case "extInterrupt1":

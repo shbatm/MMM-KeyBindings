@@ -176,3 +176,10 @@ To handle key press events in your module, see this [wiki page](https://github.c
 This module was created as a stepping stone to allow other modules to be tweaked to respond to keyboard presses--mainly for navigation purposes. Please add any requests via the Issues for this repo.
 
 **Using this module?** View a list of all modules that support MMM-KeyBindings on the wiki [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Supported-Modules).
+
+## Known Issues
+
+* The following only work with `evdev` / remote control on the main screen. When using `Mousetrap` for keyboard events, these pass like regular key presses or flat-out don't work:
+    * `KEY_LONGPRESS`
+    * Special Keys
+    * `Duration` of key press
