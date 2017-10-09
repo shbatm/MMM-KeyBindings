@@ -62,7 +62,7 @@ Module.register("MMM-KeyBindings", {
     mousetrapSquashKeyUp: ['home', 'menu'],
 
     // Allow for control on muliple instances
-    instance: (["127.0.0.1","localhost"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
+    instance: (["127.0.0.1","localhost", "0.0.0.0"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
 
     requiresVersion: "2.1.0", // Required version of MagicMirror
 
