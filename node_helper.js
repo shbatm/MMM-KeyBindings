@@ -22,6 +22,24 @@ module.exports = NodeHelper.create({
         this.pythonDaemonEnabled = false;
     },
 
+    stop: function() {
+        if (this.pythonDaemonEnabled) {
+            var pm2 = require('pm2');
+
+            pm2.connect((err) => {
+                if (err) {
+                    console.error(err);
+                }
+
+                console.log("Stopping PM2 process: evdev...");
+                pm2.stop("evdev", function(err, apps) {
+                    pm2.disconnect();
+                    if (err) { console.log(err); }
+                });
+            });
+        }
+    },
+
     createNotifyServer: function() {
         var self = this;
         // Basic URL Interface to accept push notifications formatted like
@@ -130,8 +148,8 @@ module.exports = NodeHelper.create({
 
             for (var proc in list) {
                 if ("name" in list[proc] && list[proc].name === "evdev") {
-                    if ("status" in list[proc] && list[proc].status === "online") {
-                      console.log("PM2: evdev already running. Stopping old instance...")
+                    if ("status" in list[proc].pm2_env && list[proc].pm2_env.status === "online") {
+                      console.log("PM2: evdev already running. Stopping old instance...");
                       pm2.stop('evdev', errCB);
                     }
                 }
