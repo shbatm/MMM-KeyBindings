@@ -4,13 +4,14 @@
  * By shbatm
  * MIT Licensed.
  */
- /* jshint node: true, esversion: 6*/
- 
- "use strict";
+/* jshint node: true, esversion: 6*/
 
-var NodeHelper = require("node_helper");
-var url = require("url");
+const NodeHelper = require("node_helper");
+const url = require("url");
 const exec = require("child_process").exec;
+const evdev = require("evdev");
+const udev = require("udev");
+const logger = require('tracer').console();
 // const os = require("os");
 
 
@@ -19,24 +20,14 @@ module.exports = NodeHelper.create({
     start: function() {
         console.log("MMM-KeyBindings helper has started...");
         this.notifyServerCreated = false;
-        this.pythonDaemonEnabled = false;
+        this.evdevMonitorCreated = false;
     },
 
     stop: function() {
-        if (this.pythonDaemonEnabled) {
-            var pm2 = require('pm2');
-
-            pm2.connect((err) => {
-                if (err) {
-                    console.error(err);
-                }
-
-                console.log("Stopping PM2 process: evdev...");
-                pm2.stop("evdev", function(err, apps) {
-                    pm2.disconnect();
-                    if (err) { console.log(err); }
-                });
-            });
+        if (this.evdevMonitorCreated) {
+            try {
+                this.udevMonitor.close();
+            } catch (e) {}
         }
     },
 
@@ -49,9 +40,9 @@ module.exports = NodeHelper.create({
             var notification = query.notification;
             var payload;
             try {
-              payload = JSON.parse(query.payload);
+                payload = JSON.parse(query.payload);
             } catch (e) {
-            // Oh well, but whatever...
+                // Oh well, but whatever...
             }
 
             if (typeof payload === "undefined") {
@@ -66,111 +57,58 @@ module.exports = NodeHelper.create({
         this.notifyServerCreated = true;
     },
 
-    startPythonDaemon: function(args) {
-        var self = this;
-        // Start the Python Daemon to capture input from FireTV Remote via Bluetooth
-        // Python Daemon captures inputs using python-evdev and is configured to capture 
-        // All events from '/dev/input/event0'.  Use `cat /proc/bus/input/devices` to find the 
-        // correct handler to use.  You can also use `evtest /dev/input/event0` to monitor the output.
-        // Note: to stop capturing input without shutting down the mirror, run the following from
-        // a shell prompt: `python ~/MagicMirror/modules/MMM-KeyBindings/daemon.py stop`
-        // expected args: evdev: { enabled: true, eventPath:'', disableGrab: false, 
-        //                          longPressDuration: 1.0, rawMode: false }
-        //var daemonArgs = ['start', require("path").resolve(__dirname,"evdev_daemon.py"), "-f", "--name", "evdev",
-        //                    "--", "--server", 'http://localhost:8080/' + this.name + '/notify'];
-
-        var daemonArgs = ["--server", 'http://localhost:8080/' + this.name + '/notify'];
-        var ENABLE_DAEMON_DEBUGGING = false;
-
-        if (("alias" in args) && args.alias) {
-            daemonArgs.push('--alias');
-            daemonArgs.push('\"'+args.alias+'\"');
-        } else {
-            if (("eventPath" in args) && args.eventPath) {
-                daemonArgs.push('--event');
-                daemonArgs.push(args.eventPath);
+    waitForDevice: function() {
+        this.udevMonitor = udev.monitor();
+        this.udevMonitor.on('add', (device) => {
+            if ("DEVLINKS" in device && device.DEVLINKS === this.evdevConfig.eventPath) {
+                logger.log("UDEV: Device connected.");
+                this.udevMonitor.close();
+                this.setupDevice();
             }
-            if (("bluetooth" in args) && args.bluetooth) {
-                daemonArgs.push('--bluetooth');
-                daemonArgs.push(args.bluetooth);
-            }
-        }
-        if (("disableGrab" in args) && args.disableGrab) {
-            daemonArgs.push('--no-grab');
-        }
-        if (("rawMode" in args) && args.rawMode) {
-            daemonArgs.push('--raw');
-        }
-        if ("longPressDuration" in args) {
-            if (typeof args.longPressDuration === "number") {
-                daemonArgs.push('-l');
-                daemonArgs.push(args.longPressDuration);
-            } else if (typeof args.longPressDuration === "string") {
-                daemonArgs.push('-l');
-                daemonArgs.push(parseFloat(args.longPressDuration));
-            }
-        }
-        if (ENABLE_DAEMON_DEBUGGING) {
-            daemonArgs.push("-d");
-            daemonArgs.push("-v");
-        }
+        });
+    },
 
-        console.log("Starting pm2 evdev:" + JSON.stringify(daemonArgs, null, 4));
-        // Old method of starting process with PM2, changing to use native code.
-        // var spawn = require('child_process').spawn;
-        // var daemon = spawn("pm2", daemonArgs);
+    setupDevice: function() {
+        this.device = this.evdevReader.open(this.evdevConfig.eventPath);
+        this.device.on("open", () => {
+            logger.log(`EVDEV: Connected to device: ${JSON.stringify(this.device.id)}`);
+        });
+        this.device.on("close", () => {
+            logger.debug(`EVDEV: Connection to device has been closed.`);
+            this.waitForDevice();
+        });
+    },
 
-        // daemon.stderr.on('data', (data) => { 
-        //     console.error(`MMM-KeyBindings daemon stderr: ${data}`);
-        // });
+    startEvdevMonitor: function() {
+        this.evdevMonitorCreated = true;
+        this.evdevReader = new evdev();
+        this.pendingKeyPress = {};
 
-        // daemon.stdout.on('data', (data) => {
-        //     console.log(`MMM-KeyBindings daemon stdout: ${data}`);
-        // });
-
-        // daemon.on('close', (code) => {
-        //     console.log(`MMM-KeyBindings daemon exited with code ${code}`);
-        // });
-
-        var pm2 = require('pm2');
-
-        pm2.connect( (err) => {
-          if (err) {
-            console.error(err);
-            process.exit(2);
-          }
-
-          // Stops the Daemon if it's already started
-          pm2.list(function (err, list){        
-            var errCB = function(err, apps) {
-                if (err) { console.log(err); }
-            };
-
-            for (var proc in list) {
-                if ("name" in list[proc] && list[proc].name === "evdev") {
-                    if ("status" in list[proc].pm2_env && list[proc].pm2_env.status === "online") {
-                      console.log("PM2: evdev already running. Stopping old instance...");
-                      pm2.stop('evdev', errCB);
-                    }
+        this.evdevReader.on("EV_KEY", (data) => {
+            // logger.log("key : ", data.code, data.value);
+            if (data.value > 0) {
+                this.pendingKeyPress.code = data.code;
+                this.pendingKeyPress.value = data.value;
+            } else {
+                if ("code" in this.pendingKeyPress && this.pendingKeyPress.code === data.code) {
+                    logger.log(`${this.pendingKeyPress.code} ${(this.pendingKeyPress.value===2) ? "long " : ""}pressed.`);
+                    this.sendSocketNotification("KEYPRESS", {
+                        'KeyName': data.code,
+                        'KeyState': (this.pendingKeyPress.value === 2) ? "KEY_LONGPRESSED" : "KEY_PRESSED"
+                    });
                 }
+                this.pendingKeyPress = {};
             }
-          });
-          
-          pm2.start({
-            script    : require("path").resolve(__dirname,"evdev_daemon.py"),
-            name      : 'evdev',
-            interpreter: 'python',
-            interpreterArgs: '-u',
-            args      : daemonArgs,
-            max_memory_restart : '100M'   // Optional: Restarts your app if it reaches 100Mo
-          }, function(err, apps) {
-            pm2.disconnect();   // Disconnects from PM2
-            if (err) { throw err; }
-          });
+        }).on("error", (e) => {
+            if (e.code === 'ENODEV' || e.code === 'ENOENT') {
+                logger.info("EVDEV: Device not connected, nothing at path " + e.path + ", waiting for device...");
+                this.waitForDevice();
+            } else {
+                logger.error("EVDEV: ", e);
+            }
         });
 
-        this.pythonDaemonEnabled = true;
-	console.log("MMM-KeyBindings Python Daemon Started.");
+        this.setupDevice();
     },
 
     handleEvDevKeyPressEvents: function(payload) {
@@ -181,57 +119,56 @@ module.exports = NodeHelper.create({
         switch (payload.SpecialKeys[0]) {
             case "screenPowerOn":
                 screenStatus = exec("tvservice --status",
-                       function (error, stdout, stderr) {
-                          var handled = false;
-                          if (stdout.indexOf("TV is off") !== -1) {
+                    function(error, stdout, stderr) {
+                        var handled = false;
+                        if (stdout.indexOf("TV is off") !== -1) {
                             // Screen is OFF, turn it ON
-                            exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
+                            exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", function(error, stdout, stderr) { self.checkForExecError(error, stdout, stderr); });
                             handled = true;
-                          }
-                          self.checkForExecError(error, stdout, stderr);
-                          self.handleEvDevKeyPressEventsCallback(handled);
-                       });              
+                        }
+                        self.checkForExecError(error, stdout, stderr);
+                        self.handleEvDevKeyPressEventsCallback(handled);
+                    });
                 break;
             case "screenPowerOff":
                 screenStatus = exec("tvservice --status",
-                       function (error, stdout, stderr) {
-                          var handled = false;
-                          if (stdout.indexOf("HDMI") !== -1) {
+                    function(error, stdout, stderr) {
+                        var handled = false;
+                        if (stdout.indexOf("HDMI") !== -1) {
                             // Screen is ON, turn it OFF
-                            exec("tvservice -o", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
+                            exec("tvservice -o", function(error, stdout, stderr) { self.checkForExecError(error, stdout, stderr); });
                             handled = true;
-                          }
-                          self.checkForExecError(error, stdout, stderr);
-                          self.handleEvDevKeyPressEventsCallback(handled);
-                       });
+                        }
+                        self.checkForExecError(error, stdout, stderr);
+                        self.handleEvDevKeyPressEventsCallback(handled);
+                    });
                 break;
             case "screenPowerToggle":
                 screenStatus = exec("tvservice --status",
-                       function (error, stdout, stderr) {
-                          if (stdout.indexOf("TV is off") !== -1) {
+                    function(error, stdout, stderr) {
+                        if (stdout.indexOf("TV is off") !== -1) {
                             // Screen is OFF, turn it ON
-                            exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
-                          } else if (stdout.indexOf("HDMI") !== -1) {
+                            exec("tvservice --preferred && sudo chvt 6 && sudo chvt 7", function(error, stdout, stderr) { self.checkForExecError(error, stdout, stderr); });
+                        } else if (stdout.indexOf("HDMI") !== -1) {
                             // Screen is ON, turn it OFF
-                            exec("tvservice -o", function(error, stdout, stderr){ self.checkForExecError(error, stdout, stderr); });
-                          }
-                          self.checkForExecError(error, stdout, stderr);
-                          self.handleEvDevKeyPressEventsCallback(true);
-                       });
+                            exec("tvservice -o", function(error, stdout, stderr) { self.checkForExecError(error, stdout, stderr); });
+                        }
+                        self.checkForExecError(error, stdout, stderr);
+                        self.handleEvDevKeyPressEventsCallback(true);
+                    });
                 break;
             default:
                 // Should never get here, but OK:
-                console.log("MMM-KeyBindings Helper received request to process a KEYPRESS of " + payload.KeyName + ":" + 
-                            payload.KeyState + ", but there is no handler for this key.");
+                console.log("MMM-KeyBindings Helper received request to process a KEYPRESS of " + payload.KeyName + ":" +
+                    payload.KeyState + ", but there is no handler for this key.");
                 this.handleEvDevKeyPressEventsCallback(false);
         }
     },
 
     handleEvDevKeyPressEventsCallback: function(handled) {
         if (this.currentPayload && !handled) {
-            this.currentPayload.SpecialKeys.splice(0,1);
+            this.currentPayload.SpecialKeys.splice(0, 1);
             this.sendSocketNotification("KEYPRESS", this.currentPayload);
-            // console.log("Not handled. Sending back to processor.");
         }
         this.currentPayload = null;
     },
@@ -250,11 +187,10 @@ module.exports = NodeHelper.create({
                 this.createNotifyServer();
             }
         }
-        if (notification === "ENABLE_PYTHONDAEMON") {
-            if (this.notifyServerCreated && !this.pythonDaemonEnabled) {
-                this.startPythonDaemon(payload);
-            } else if (!this.pythonDaemonEnabled) {
-                console.error("Cannot enable python daemon. Did the Notify server not get enabled?");
+        if (notification === "ENABLE_EVDEV") {
+            if (!this.evdevMonitorCreated) {
+                this.evdevConfig = payload;
+                this.startEvdevMonitor();
             }
         }
         if (notification === "PROCESS_KEYPRESS") {
@@ -269,7 +205,7 @@ module.exports = NodeHelper.create({
         }
         if (error !== null) {
             console.log('exec error: ' + error);
-            return 1; 
+            return 1;
         }
         return 0;
     },

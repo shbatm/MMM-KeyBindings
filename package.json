@@ -1,6 +1,6 @@
 {
   "name": "MMM-KeyBindings",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Module to provide keyboard or Bluetooth Remote Control key bindings to control various aspects of the MagicMirror through socket notifications",
   "main": "MMM-KeyBindings.js",
   "repository": {
@@ -13,6 +13,11 @@
     "remote control",
     "Keyboard"
   ],
+  "scripts": {
+    "preinstall": "./preinstall.sh",
+    "postinstall": "./postinstall.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "author": "shbatm",
   "license": "MIT",
   "bugs": {
@@ -20,6 +25,12 @@
   },
   "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "dependencies": {
-    "pm2": "^2.4.0"
+    "pm2": "^2.4.0",
+    "evdev": "github:shbatm/node-evdev",
+    "tracer": "^0.9.6",
+    "udev": "^0.4.0"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.8.2"
   }
 }
