@@ -27,6 +27,7 @@ module.exports = NodeHelper.create({
         if (this.evdevMonitorCreated) {
             try {
                 this.udevMonitor.close();
+                this.evdevReader.close();
             } catch (e) {}
         }
     },
