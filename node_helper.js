@@ -11,7 +11,6 @@ const url = require("url");
 const exec = require("child_process").exec;
 const evdev = require("evdev");
 const udev = require("udev");
-const logger = require('tracer').console();
 // const os = require("os");
 
 
@@ -25,8 +24,11 @@ module.exports = NodeHelper.create({
 
     stop: function() {
         if (this.evdevMonitorCreated) {
+            console.log("EVDEV: Closing monitor and reader");
             try {
                 this.udevMonitor.close();
+            } catch (e) {}
+            try {
                 this.evdevReader.close();
             } catch (e) {}
         }
@@ -62,7 +64,7 @@ module.exports = NodeHelper.create({
         this.udevMonitor = udev.monitor();
         this.udevMonitor.on('add', (device) => {
             if ("DEVLINKS" in device && device.DEVLINKS === this.evdevConfig.eventPath) {
-                logger.log("UDEV: Device connected.");
+                console.log("UDEV: Device connected.");
                 this.udevMonitor.close();
                 this.setupDevice();
             }
@@ -72,10 +74,10 @@ module.exports = NodeHelper.create({
     setupDevice: function() {
         this.device = this.evdevReader.open(this.evdevConfig.eventPath);
         this.device.on("open", () => {
-            logger.log(`EVDEV: Connected to device: ${JSON.stringify(this.device.id)}`);
+            console.log(`EVDEV: Connected to device: ${JSON.stringify(this.device.id)}`);
         });
         this.device.on("close", () => {
-            logger.debug(`EVDEV: Connection to device has been closed.`);
+            console.debug(`EVDEV: Connection to device has been closed.`);
             this.waitForDevice();
         });
     },
@@ -86,13 +88,13 @@ module.exports = NodeHelper.create({
         this.pendingKeyPress = {};
 
         this.evdevReader.on("EV_KEY", (data) => {
-            // logger.log("key : ", data.code, data.value);
+            // console.log("key : ", data.code, data.value);
             if (data.value > 0) {
                 this.pendingKeyPress.code = data.code;
                 this.pendingKeyPress.value = data.value;
             } else {
                 if ("code" in this.pendingKeyPress && this.pendingKeyPress.code === data.code) {
-                    logger.log(`${this.pendingKeyPress.code} ${(this.pendingKeyPress.value===2) ? "long " : ""}pressed.`);
+                    console.log(`${this.pendingKeyPress.code} ${(this.pendingKeyPress.value===2) ? "long " : ""}pressed.`);
                     this.sendSocketNotification("KEYPRESS", {
                         'KeyName': data.code,
                         'KeyState': (this.pendingKeyPress.value === 2) ? "KEY_LONGPRESSED" : "KEY_PRESSED"
@@ -102,10 +104,10 @@ module.exports = NodeHelper.create({
             }
         }).on("error", (e) => {
             if (e.code === 'ENODEV' || e.code === 'ENOENT') {
-                logger.info("EVDEV: Device not connected, nothing at path " + e.path + ", waiting for device...");
+                console.info("EVDEV: Device not connected, nothing at path " + e.path + ", waiting for device...");
                 this.waitForDevice();
             } else {
-                logger.error("EVDEV: ", e);
+                console.error("EVDEV: ", e);
             }
         });
 

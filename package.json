@@ -25,9 +25,9 @@
   },
   "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "dependencies": {
-    "pm2": "^2.4.0",
     "evdev": "github:shbatm/node-evdev",
-    "tracer": "^0.9.6",
+    "pm2": "^2.4.0",
+    "tracer": "github:shbatm/tracer",
     "udev": "^0.4.0"
   },
   "devDependencies": {
