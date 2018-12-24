@@ -8,7 +8,7 @@
  *  These is a basic implementation, expand as needed.
  *
  */
-({ 
+let keyBindings = { 
     // DO NOT COPY ABOVE THIS LINE (for future modulization)
 
     /*** defaults ***
@@ -65,7 +65,7 @@
          */
         keyBindingsTakeFocus: "Enter",
         /* OR AS AN OBJECT: */
-        keyBindingsTakeFocus: { KeyName: "Enter", KeyState: "KEY_LONGPRESSED" }
+        // keyBindingsTakeFocus: { KeyName: "Enter", KeyState: "KEY_LONGPRESSED" }
     },
 
     /*** setupKeyBindings ***
@@ -85,8 +85,6 @@
         if (typeof this.config.kbMultiInstance === undefined) {
             this.config.kbMultiInstance = true;
         }
-        this.kbInstance = (["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined, "0.0.0.0"].indexOf(
-            window.location.hostname) > -1) ? "SERVER" : "LOCAL";
         this.reverseKBMap = {};
         for (var eKey in this.config.keyBindings) {
             if (this.config.keyBindings.hasOwnProperty(eKey)) {
@@ -119,7 +117,7 @@
 
         // Validate Keypresses
         if (notification === "KEYPRESS" && this.currentKeyPressMode === this.config.keyBindingsMode) {
-            if (this.config.kbMultiInstance && payload.Sender !== this.kbInstance) {
+            if (this.config.kbMultiInstance && payload.Sender !== payload.instance) {
                 return false; // Wrong Instance
             }
             if (!(payload.KeyName in this.reverseKBMap)) {
@@ -206,4 +204,4 @@
     },
 
     // DO NOT COPY BELOW THIS LINE
-});
+};

@@ -6,6 +6,10 @@
  * MIT Licensed.
  */
 /* jshint esversion:6 */
+(function () {
+    // Establish the root object, `window` in the browser, or `global` on the server.
+    var global = this; 
+})();
 
 Module.register("MMM-KeyBindings", {
     defaults: {
@@ -62,7 +66,7 @@ Module.register("MMM-KeyBindings", {
     mousetrapSquashKeyUp: ['home', 'menu'],
 
     // Allow for control on muliple instances
-    instance: (["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined, "0.0.0.0"].indexOf(window.location.hostname) > -1) ? "SERVER" : "LOCAL",
+    instance: (global.location && ["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined, "0.0.0.0"].indexOf(root.location.hostname) > -1) ? "SERVER" : "LOCAL",
 
     requiresVersion: "2.1.0", // Required version of MagicMirror
 
@@ -138,6 +142,7 @@ Module.register("MMM-KeyBindings", {
             }
             payload.CurrentMode = self.currentKeyPressMode;
             payload.Sender = self.instance;
+            payload.instance = self.instance;
             payload.Protocol = "mousetrap";
             self.sendNotification("KEYPRESS", payload);
             //console.log(payload);
@@ -236,6 +241,7 @@ Module.register("MMM-KeyBindings", {
         // the evdev keys only work on the main server)
         payload.Sender = "SERVER";
         payload.Protocol = "evdev";
+        payload.instance = this.instance;
 
         // Standardize the name
         if (payload.KeyName in this.reverseKeyMap) {
