@@ -1,0 +1,10 @@
+#title           :99-btremote.rules
+#description     :UDEV Rules File for creating symlink to bluetooth remote
+#author		 :shbatm
+#date            :2018-12-03
+#version         :0.0.1
+#notes           :This file should be copied into /etc/udev/rules.d/ and then
+                  run `udevadm trigger` to process and create shortcut.
+                  This will create a symbolic device at `/dev/input/btremote`.
+#==============================================================================
+SUBSYSTEM=="input", ATTRS{name}=="Amazon Fire TV Remote", ENV{DEVNAME}=="*event*", SYMLINK+="input/btremote"

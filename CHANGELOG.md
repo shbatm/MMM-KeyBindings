@@ -1,3 +1,10 @@
+## [1.2.0] - Change to use native NodeJS event monitoring
+
+* Simplified device connections by using native NodeJS modules for detecting keypresses (node-evdev and node-udev) instead of using a separate python daemon.
+* Makes use of udev rules file to create a symlink to the device instead of trying to detect the event path every time the device connects.
+* Removed several options under `evdev` as result of the above changes.
+
+
 ## [1.1.1] - Documentation Update & Mousetrap Improvements
 
 * Improvements in Mousetrap bindings for standard keyboard keypresses

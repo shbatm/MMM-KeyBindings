@@ -40,27 +40,13 @@ You can then configure other modules to handle the key presses and, if necessary
 cd ~/MagicMirror/modules
 git clone https://github.com/shbatm/MMM-KeyBindings
 ```
-
-### Additional System Requirements
-
-When using a bluetooth device, the following are required.  Not needed for keyboard-only input.
-
-* Python v2.7.x
-* `python-evdev` module:
-    '''
-    sudo apt-get install python-dev python-pip gcc
-    sudo apt-get install linux-headers-$(uname -r)
-    sudo pip install evdev
-    '''
-* PM2 node module: run `npm install pm2` inside MMM-KeyBindings folder
-    - Note: if you already use PM2 to auto-launch MagicMirror, run the following to link the modules:
-    '''
-    cd ~/MagicMirror/modules/MMM-KeyBindings
-    npm link pm2
-    '''
-### <a name="RemoteSetup"></a>Setting Up The Remote
-
-See instructions [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Setup)
+*NOTE:* If you are not planning to use this module with anything but a standard keyboard. STOP HERE. For advanced control using something like the Amazon Fire TV Remote, continue with the steps below:
+1. Connect your device and make sure it's recognized (for example, using the Desktop bluetooth device menu). See instructions [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Setup)
+2. Find the "Name" of the device using one of the two methods below:
+    1. From a terminal run `cat /proc/bus/input/devices | grep "Name"` to get the Name to use
+    2. From a terminal run `udevadm info -a -p $(udevadm info -q path -n /dev/input/event0) | grep ATTRS{name}`, assuming this is the only device connected. You may have to change `event0` to something else.  Check `ls /dev/input/` to see which ones are currently connected.
+3. Edit the `99-btremote.rules` file in this module's directory to use the name you found.
+4. Run `npm install` from the module directory.
 
 ## Configuration options 
 #### (samples below)
@@ -72,13 +58,8 @@ See instructions [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Se
 | `disableKeys`         | Array of keys to ignore from the default set.
 | `enableNotifyServer`  | Allow the use of the HTTP GET "Notify" server. Default is `true`, can be set to `false` to use local keyboard keys only.
 | `endableRelayServer`  | Enables non-"KEYPRESS" HTTP GET notifications to be passed through to other modules when received on the "Notify" server. Useful for enabling 3rd party communication with other modules. <br />*Default:* `true` <br />*Requires:* `enableNotifyServer: true`.
-| `evdev` | Configuration options for the `python-evdev` daemon. <br />See below for details.<br />*Example:*<br/>`evdev: { `<br />&nbsp;&nbsp;&nbsp;&nbsp;`enabled: true,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`alias: 'Amazon Fire TV Remote'`<br />&nbsp;&nbsp;&nbsp;&nbsp;`bluetooth:'',`<br />&nbsp;&nbsp;&nbsp;&nbsp;`eventPath:'',`<br />&nbsp;&nbsp;&nbsp;&nbsp;`disableGrab: false,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`longPressDuration: 0.7,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`rawMode: false`<br />`}`
-| &nbsp;&nbsp;&nbsp;&nbsp;`.alias` | Common Name / Alias of the Bluetooth Device to use.  This is what shows up in the Bluetooth menu of the GUI (e.g. '"Amazon Fire TV Remote"'). This enables bluetooth device dbus connect/disconnect monitoring to make the daemon more responsive.<br />*Note:* The `.bluetooth` and `.eventPath` details are not required if the Alias is used. <br />*Default:* `''` (disabled).
-| &nbsp;&nbsp;&nbsp;&nbsp;`.bluetooth` | MAC Address of the Bluetooth Device to use - enables bluetooth device dbus connect/disconnect monitoring to make the daemon more responsive.<br /> *Default:* `''` (disabled).
-| &nbsp;&nbsp;&nbsp;&nbsp;`.eventPath` | Path to the event input file<br /> *Default:* `/dev/input/event0`, `''` uses the default path.
-| &nbsp;&nbsp;&nbsp;&nbsp;`.disableGrab` | By default, this script grabs all inputs from the device, which will block any commands from being passed natively. Set `disableGrab: true` to disable this behavior.
-| &nbsp;&nbsp;&nbsp;&nbsp;`.longPressDuration` | The threshold in seconds (as float) between a `KEY_PRESSED` and `KEY_LONGPRESSED` event firing.
-| &nbsp;&nbsp;&nbsp;&nbsp;`.rawMode` | Enables raw mode to send the individual `KEY_UP`, `KEY_DOWN`, `KEY_HOLD` events.
+| `evdev` | Configuration options for the `evdev` daemon. <br />See below for details.<br />*Example:*<br/>`evdev: { `<br />&nbsp;&nbsp;&nbsp;&nbsp;`enabled: true,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`eventPath: '/dev/input/btremote',`<br />`}`
+| &nbsp;&nbsp;&nbsp;&nbsp;`.eventPath` | Path to the event input file<br /> *Default:* `/dev/input/btremote`
 | `evdevKeymap`     | Map of the remote controls' key names (from `evtest`) to translate into standard keyboard event names. See Sample Key Map below.
 | `specialKeys`     | List of Keys and KeyStates that map to special functions that will be handled by this module. See [Special Keys](#SpecialKeys) below.
 | `extInterruptModes` | Array of "Modes" that can be set by assigning special keys. See [Special Keys](#SpecialKeys) below.
@@ -93,15 +74,6 @@ The config below uses the default [special keys](SpecialKeys) for the Fire Stick
 {
     module: 'MMM-KeyBindings',
     config: {
-        evdev: {
-            enabled: true,
-            alias: "Amazon Fire TV Remote",
-            bluetooth: '74:75:48:6E:C3:CB',
-            eventPath: '',
-            disableGrab: false, 
-            longPressDuration: 0.7, 
-            rawMode: false
-        },
         enableNotifyServer: true,
         enableRelayServer: true,
         enableMousetrap: true,

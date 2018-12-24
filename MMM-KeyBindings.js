@@ -14,55 +14,53 @@
 Module.register("MMM-KeyBindings", {
     defaults: {
         enabledKeyStates: ["KEY_PRESSED", "KEY_LONGPRESSED"], // Other options are 'KEY_UP', 'KEY_DOWN', 
-                                                              // 'KEY_HOLD' but evdev.raw_mode must be true to receive
+        // 'KEY_HOLD' but evdev.raw_mode must be true to receive
         handleKeys: [], // List of additional keys to handle in this module; blank == standard set
         disableKeys: [], // list of keys to ignore from the default set.
         enableNotifyServer: true,
         enableRelayServer: false,
         enableMousetrap: false,
-        evdev: {        enabled: true,
-                        alias: "",
-                        bluetooth: "",
-                        eventPath:'', 
-                        disableGrab: false, 
-                        longPressDuration: 0.7, 
-                        rawMode: false
-                },
-        evdevKeymap: {  Home: "KEY_HOMEPAGE", 
-                        Enter: "KEY_KPENTER", 
-                        ArrowLeft: "KEY_LEFT", 
-                        ArrowRight: "KEY_RIGHT", 
-                        ArrowUp: "KEY_UP", 
-                        ArrowDown: "KEY_DOWN",
-                        Menu: "KEY_MENU", 
-                        MediaPlayPause: "KEY_PLAYPAUSE", 
-                        MediaNextTrack: "KEY_FASTFORWARD", 
-                        MediaPreviousTrack: "KEY_REWIND",
-                        Return: "KEY_BACK"
-                    },
-        specialKeys: {  screenPowerOn: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_PRESSED" },
-                        screenPowerOff: { KeyName:"KEY_HOMEPAGE", KeyState:"KEY_LONGPRESSED" },
-                        screenPowerToggle: { KeyName:"", KeyState:"" },
-                        osdToggle: { KeyName:"", KeyState:"" },
-                        extInterrupt1: { KeyName: "", KeyState: "" },
-                        extInterrupt2: { KeyName: "", KeyState: "" },
-                        extInterrupt3: { KeyName: "", KeyState: "" },
-                     }, 
+        evdev: {
+            enabled: true,
+            eventPath: '/dev/input/btremote',
+        },
+        evdevKeymap: {
+            Home: "KEY_HOMEPAGE",
+            Enter: "KEY_KPENTER",
+            ArrowLeft: "KEY_LEFT",
+            ArrowRight: "KEY_RIGHT",
+            ArrowUp: "KEY_UP",
+            ArrowDown: "KEY_DOWN",
+            Menu: "KEY_MENU",
+            MediaPlayPause: "KEY_PLAYPAUSE",
+            MediaNextTrack: "KEY_FASTFORWARD",
+            MediaPreviousTrack: "KEY_REWIND",
+            Return: "KEY_BACK"
+        },
+        specialKeys: {
+            screenPowerOn: { KeyName: "KEY_HOMEPAGE", KeyState: "KEY_PRESSED" },
+            screenPowerOff: { KeyName: "KEY_HOMEPAGE", KeyState: "KEY_LONGPRESSED" },
+            screenPowerToggle: { KeyName: "", KeyState: "" },
+            osdToggle: { KeyName: "", KeyState: "" },
+            extInterrupt1: { KeyName: "", KeyState: "" },
+            extInterrupt2: { KeyName: "", KeyState: "" },
+            extInterrupt3: { KeyName: "", KeyState: "" },
+        },
         extInterruptModes: [],
 
     },
 
-    defaultMouseTrapKeys: ['home','enter','left','right','up','down','return','playpause','nexttrack','previoustrack', 'menu'],
+    defaultMouseTrapKeys: ['home', 'enter', 'left', 'right', 'up', 'down', 'return', 'playpause', 'nexttrack', 'previoustrack', 'menu'],
 
     // Like evdevKeyMap but for correcting mousetrap keys if needed:
     mousetrapKeyMap: { ContextMenu: "Menu" },
 
-    defaultMouseTrapKeyCodes: { 179:'playpause', 178:'nexttrack', 177:'previoustrack', 93:'menu'},
+    defaultMouseTrapKeyCodes: { 179: 'playpause', 178: 'nexttrack', 177: 'previoustrack', 93: 'menu' },
 
     /* Some special keyboard keys do stuff on KeyUp, 
      * by default Mousetrap binds to keydown or keypress.
      * Keys in this list will be bound to 'keyUp' just to call "handleDefault"
-     */ 
+     */
     mousetrapSquashKeyUp: ['home', 'menu'],
 
     // Allow for control on muliple instances
@@ -73,13 +71,11 @@ Module.register("MMM-KeyBindings", {
     start: function() {
         console.log(this.name + " has started...");
 
-        this.sendSocketNotification("MMM-KeyBindings-SOCKET_START", this.name);
-
         if (this.config.enableNotifyServer) {
             this.sendSocketNotification("ENABLE_RESTNOTIFYSERVER", this.name);
-            if (this.config.evdev.enabled) {
-                this.sendSocketNotification("ENABLE_PYTHONDAEMON", this.config.evdev);
-            }
+        }
+        if (this.config.evdev.enabled) {
+            this.sendSocketNotification("ENABLE_EVDEV", this.config.evdev);
         }
 
         this.currentKeyPressMode = "DEFAULT";
@@ -93,7 +89,7 @@ Module.register("MMM-KeyBindings", {
         }
     },
 
-    getScripts: function () {
+    getScripts: function() {
         return ['mousetrap.min.js', 'mousetrap-global-bind.min.js'];
     },
 
@@ -167,9 +163,9 @@ Module.register("MMM-KeyBindings", {
         payload.SpecialKeys = [];
         for (var sKey in this.config.specialKeys) {
             // console.log("Testing specialKeys", sKey);
-            if (("KeyName" in this.config.specialKeys[sKey]) && 
-                payload.KeyName === this.config.specialKeys[sKey].KeyName && 
-                ("KeyState" in this.config.specialKeys[sKey]) && 
+            if (("KeyName" in this.config.specialKeys[sKey]) &&
+                payload.KeyName === this.config.specialKeys[sKey].KeyName &&
+                ("KeyState" in this.config.specialKeys[sKey]) &&
                 payload.KeyState === this.config.specialKeys[sKey].KeyState) {
                 payload.SpecialKeys.push(sKey);
             }
@@ -202,13 +198,13 @@ Module.register("MMM-KeyBindings", {
                     this.currentKeyPressMode = this.config.extInterruptModes[2];
                     handled = true;
                 }
-                break;                            
+                break;
             default:
                 handled = false;
         }
 
         if (!handled) {
-            payload.SpecialKeys.splice(0,1);
+            payload.SpecialKeys.splice(0, 1);
             this.handleEvDevKeyPressEvents(payload);
         }
     },
@@ -253,7 +249,7 @@ Module.register("MMM-KeyBindings", {
     },
 
     // socketNotificationReceived from helper
-    socketNotificationReceived: function (notification, payload) {
+    socketNotificationReceived: function(notification, payload) {
         // console.log("Working notification system. Notification:", notification, "payload: ", payload);
         if (notification === "KEYPRESS") {
             if (this.config.enabledKeyStates.indexOf(payload.KeyState) > -1) {
@@ -264,9 +260,9 @@ Module.register("MMM-KeyBindings", {
         }
     },
 
-    notificationReceived: function (notification, payload, sender) {
+    notificationReceived: function(notification, payload, sender) {
         if (notification === "DOM_OBJECTS_CREATED") {
-            if (this.config.enableMousetrap && !(this.config.enableNotifyServer && 
+            if (this.config.enableMousetrap && !(this.config.enableNotifyServer &&
                     this.instance === "SERVER")) {
                 console.log("Setting up Mousetrap keybindings.");
                 this.setupMousetrap();
