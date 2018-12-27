@@ -135,6 +135,7 @@ The following is an example Actions configuration to:
 
 1. Toggle the monitor on/off when the Bluetooth remote's Home button is long-pressed (requires MMM-Remote-Control to handle command)
 2. Change the slides in [MMM-Carousel w/ Slide Navigation](https://github.com/shbatm/MMM-Carousel) when the left or right buttons are pushed.
+3. Exit whatever mode you're in, back to DEFAULT when Return is long pressed.
 
 ```js
 actions: [{
@@ -155,6 +156,11 @@ actions: [{
     state: "KEY_LONGPRESSED",
     notification: "CAROUSEL_NEXT"
  },
+ {
+    key: "Return",
+    state: "KEY_LONGPRESSED",
+    changeMode: "DEFAULT"
+ }
 ]
 ``` 
 

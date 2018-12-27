@@ -11,7 +11,7 @@
 var KeyHandler = Class.extend({
     /*** defaults ***
      *
-     *   Add items below to your moduleName.js's `defaults` object
+     *   Default Key Binding Configuration, can be overwriten on init
      *
      */
     defaults: {
@@ -50,7 +50,7 @@ var KeyHandler = Class.extend({
          * from responding to key presses when you have focus.
          * 
          * Just remember you must release focus when done!
-         * Call this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT")
+         * Call this.releaseFocus()
          * when you're ready to release the focus.
          * 
          * Additional Option:
@@ -70,6 +70,7 @@ var KeyHandler = Class.extend({
      * Is called when the module is instantiated.
      */
     init: function(name, config) {
+        this.name = name;
         this.config = Object.assign({}, this.defaults, config);
 
         this.currentMode = "DEFAULT";
@@ -82,8 +83,6 @@ var KeyHandler = Class.extend({
                 this.reverseMap[this.config.map[eKey]] = eKey;
             }
         }
-
-        console.log(this.config);
     },
 
     /*** validate ***
@@ -106,7 +105,7 @@ var KeyHandler = Class.extend({
         }
 
         // Uncomment line below for diagnostics & to confirm keypresses are being recieved
-        // if (notification === "KEYPRESS") { console.log(payload); }
+        if (notification === "KEYPRESS") { console.log(payload); }
 
         // Validate Keypresses
         if (notification === "KEYPRESS" && this.currentMode === this.config.mode) {
@@ -125,7 +124,7 @@ var KeyHandler = Class.extend({
             if (this.currentMode === this.config.mode) {
                 return false; // Already have focus.
             }
-            if (this.config.multiInstance && payload.sender !== this.instance) {
+            if (this.config.multiInstance && payload.sender !== payload.instance) {
                 return false; // Wrong Instance
             }
             if (typeof this.config.takeFocus === "object") {
@@ -138,12 +137,46 @@ var KeyHandler = Class.extend({
                 return false; // Wrong Key;
             }
 
-            this.keyPressFocusReceived();
+            this.focusReceived();
             return true;
         }
 
         return false;
     },
+
+    /*** focusReceived ***
+     *
+     *   Function is called when a valid take focus key press 
+     *      has been received and is ready for action
+     *
+     */
+    focusReceived: function() {
+        console.log(this.name + " HAS FOCUS!");
+        this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.mode);
+        this.currentMode = this.config.mode;
+        this.onFocus();
+    },
+
+    /*** releaseFocus ***
+     *
+     *   Call this function when ready to release focus
+     *
+     *   Modify this function to do what you need in your module
+     *      whenever you're ready to give up focus.
+     *
+     */
+    releaseFocus: function() {
+        console.log(this.name + " HAS RELEASED FOCUS!");
+        this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
+        this.currentMode = "DEFAULT";
+        this.onFocusReleased();
+    },
+
+
+
+    /**************** SUBCLASSABLE FUNCTIONS ****************/
+    /*** Pass your functions in the KeyHandler definition ***/
+
     /*** validKeyPress ***
      *
      *   Add function below to your moduleName.js
@@ -163,37 +196,29 @@ var KeyHandler = Class.extend({
             console.log("LEFT KEY WAS PRESSED!");
         }
     },
-
-    /*** OPTIONAL: keyPressFocusReceived ***
-     *
-     *   Add function below to your moduleName.js
-     *   Function is called when a valid take focus key press 
-     *      has been received and is ready for action
+    /*
+     * Subclass this method in your KeyHandler definition to do something
+     * when focus has been receieved.
      *   Modify this function to do what you need in your module
      *      whenever focus is received.
-     *
      */
-    keyPressFocusReceived: function(kp) {
-        console.log(this.name + "HAS FOCUS!");
-        this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.mode);
-        this.currentMode = this.config.mode;
-        // DO ANYTHING YOU NEED
+    onFocus: function(kp) {
+
+    },
+    /*
+     * Subclass this method in your KeyHandler definition to do something
+     * when focus has been receieved.
+     *   Modify this function to do what you need in your module
+     *      whenever focus is released.
+     */
+    onFocusReleased: function(kp) {
+
     },
 
-    /*** OPTIONAL: keyPressReleaseFocus ***
-     *
-     *   Add function below to your moduleName.js
-     *   Call this function when ready to release focus
-     *
-     *   Modify this function to do what you need in your module
-     *      whenever you're ready to give up focus.
-     *
+    /* 
+     *  Subclassed to provide reference to module's send function.
      */
-    keyPressReleaseFocus: function() {
-        console.log(this.name + "HAS RELEASED FOCUS!");
-        this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
-        this.currentMode = "DEFAULT";
-    },
+    sendNotification: function(notification, payload) {},
 });
 
 KeyHandler.definitions = {};

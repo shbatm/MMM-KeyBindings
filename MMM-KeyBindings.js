@@ -39,6 +39,9 @@ Module.register("MMM-KeyBindings", {
             mode: "DEFAULT",
             notification: "REMOTE_ACTION",
             payload: { action: "MONITORTOGGLE" }
+            // Can also be:
+            // changeMode: "NEW_MODE"
+            // instead of notification & payload
         }]
     },
 
@@ -76,8 +79,8 @@ Module.register("MMM-KeyBindings", {
 
     setupMousetrap: function() {
         var self = this;
-        var keys = ['home', 'enter', 'left', 'right', 'up', 'down', 'return', 'playpause', 'nexttrack', 'previoustrack', 'menu'];
-        var keyCodes = { 179: 'playpause', 178: 'nexttrack', 177: 'previoustrack', 93: 'menu' };
+        var keys = ['home', 'enter', 'left', 'right', 'up', 'down', 'return', 'playpause', 'nexttrack', 'previoustrack', 'Menu'];
+        var keyCodes = { 179: 'playpause', 178: 'nexttrack', 177: 'previoustrack', 93: 'Menu' };
         var keyMap = { ContextMenu: "Menu" };
 
         Mousetrap.addKeycodes(keyCodes);
@@ -124,11 +127,10 @@ Module.register("MMM-KeyBindings", {
             payload.protocol = "mousetrap";
             self.sendNotification("KEYPRESS", payload);
             self.doAction(payload);
-            //console.log(payload);
         });
 
         // Squash bad actors:
-        Mousetrap.bind(['home', 'menu'], (e) => {
+        Mousetrap.bind(['home', 'Menu'], (e) => {
             e.preventDefault();
             return false;
         }, 'keyup');
@@ -180,7 +182,13 @@ Module.register("MMM-KeyBindings", {
             if (action.state && action.state !== payload.keyState) { return; }
             if (action.instance && action.instance !== payload.sender) { return; }
             if (action.mode && action.mode !== payload.currentMode) { return; }
-            this.sendNotification(payload.notification, payload.payload);
+
+            if ("changeMode" in action) {
+                this.currentKeyPressMode = action.changeMode;
+                this.sendNotification("KEYPRESS_MODE_CHANGED", action.changeMode);
+            } else {
+                this.sendNotification(payload.notification, payload.payload);
+            }
         }
     }
 });
