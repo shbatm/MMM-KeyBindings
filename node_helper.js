@@ -7,8 +7,8 @@
 /* jshint node: true, esversion: 6*/
 
 const NodeHelper = require("node_helper");
-const evdev = require("evdev");
-const udev = require("udev");
+var evdev;
+var udev;
 
 module.exports = NodeHelper.create({
 
@@ -56,6 +56,9 @@ module.exports = NodeHelper.create({
     },
 
     startEvdevMonitor: function() {
+        evdev = require("evdev");
+        udev = require("udev");
+
         this.evdevMonitorCreated = true;
         this.evdevReader = new evdev();
         this.pendingKeyPress = {};

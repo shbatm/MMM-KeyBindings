@@ -158,9 +158,9 @@ actions: [{
 ]
 ``` 
 
-## <a name="HandlingKeys"></a>Handling Keys in Another Module
+## Handling Keys in Another Module
 
-To handle key press events in your module, see this [wiki page](https://github.com/shbatm/MMM-KeyBindings/wiki/Integration-into-Other-Modules) and refer to [handleKeys.js](https://github.com/shbatm/MMM-KeyBindings/blob/master/handleKeys.js) for drop-in functions with detailed documentation.
+To handle key press events in your module, see this [wiki page](https://github.com/shbatm/MMM-KeyBindings/wiki/Integration-into-Other-Modules)
 
 ## Development Path
 This module was created as a stepping stone to allow other modules to be tweaked to respond to keyboard presses--mainly for navigation purposes. Please add any requests via the Issues for this repo.

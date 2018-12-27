@@ -8,9 +8,7 @@
  *  These is a basic implementation, expand as needed.
  *
  */
-let keyBindings = { 
-    // DO NOT COPY ABOVE THIS LINE (for future modulization)
-
+var KeyHandler = Class.extend({
     /*** defaults ***
      *
      *   Add items below to your moduleName.js's `defaults` object
@@ -19,8 +17,8 @@ let keyBindings = {
     defaults: {
         /*** MMM-KeyBindings STANDARD MAPPING ***/
         /* Add the "mode" you would like to respond to */
-        keyBindingsMode: "DEFAULT",
-        keyBindings: {
+        mode: "DEFAULT",
+        map: {
             /* Add each key you want to respond to in the form:
              *      yourkeyName: "keyName_from_MMM-KeyBindings"
              */
@@ -28,26 +26,26 @@ let keyBindings = {
             Left: "ArrowLeft",
             /* ... */
         },
-        
+
         /*** OPTIONAL ***/
         /*  When using muliple instances (i.e. the screen connected
          *  to the server & browser windows on other computers):
          *  
-         *  kbMultiInstance: true -- the bluetooth device will only
+         *  multiInstance: true -- the bluetooth device will only
          *  control the local server's instance.
          *  The browswer windows are controlled by the local
          *   keyboard (assuming enableMoustrap:true in
          *   MMM-KeyBindings' config)
          *
-         *  kbMultiInstance: false -- the bluetooth device will
+         *  multiInstance: false -- the bluetooth device will
          *  control all instances of this module.
          *  
          */
-        kbMultiInstance: true,
+        multiInstance: true,
 
         /* If you would like your module to "take focus" when a
-         * particular key is pressed change the keyBindingsMode
-         * setting to "MYKEYWORD" and add a "keyBindingsTakeFocus"
+         * particular key is pressed change the mode
+         * setting to "MYKEYWORD" and add a "takeFocus"
          * mapped to a key. This will keep other modules
          * from responding to key presses when you have focus.
          * 
@@ -63,54 +61,47 @@ let keyBindings = {
          * Example below takes the focus when "Enter" is pressed
          *
          */
-        keyBindingsTakeFocus: "Enter",
+        takeFocus: "Enter",
         /* OR AS AN OBJECT: */
-        // keyBindingsTakeFocus: { keyName: "Enter", keyState: "KEY_LONGPRESSED" }
+        // takeFocus: { keyName: "Enter", keyState: "KEY_LONGPRESSED" }
     },
 
-    /*** setupKeyBindings ***
-     *
-     *   Add function below to your moduleName.js
-     *   Add `this.setupKeyBindings()` to module's 'start' function
-     *
-     *   If your module does not already overridde the function, use the snippet below
-     *      start: function() {
-     *          console.log(this.name + " has started...");
-     *          this.setupKeyBindings();
-     *      },
-     *
+    /* init()
+     * Is called when the module is instantiated.
      */
-    setupKeyBindings: function(config) {
+    init: function(name, config) {
         this.config = Object.assign({}, this.defaults, config);
 
-        this.currentKeyPressMode = "DEFAULT";
-        if (typeof this.config.kbMultiInstance === undefined) {
-            this.config.kbMultiInstance = true;
+        this.currentMode = "DEFAULT";
+        if (typeof this.config.multiInstance === undefined) {
+            this.config.multiInstance = true;
         }
-        this.reverseKBMap = {};
-        for (var eKey in this.config.keyBindings) {
-            if (this.config.keyBindings.hasOwnProperty(eKey)) {
-                this.reverseKBMap[this.config.keyBindings[eKey]] = eKey;
+        this.reverseMap = {};
+        for (var eKey in this.config.map) {
+            if (this.config.map.hasOwnProperty(eKey)) {
+                this.reverseMap[this.config.map[eKey]] = eKey;
             }
         }
+
+        console.log(this.config);
     },
 
-    /*** validateKeyPress ***
+    /*** validate ***
      *
      *   Add function below to your moduleName.js
-     *   Add `if (this.validateKeyPress(notification, payload)) { return; }` 
+     *   Add `if (this.validate(notification, payload)) { return; }` 
      *    to the first line of module's 'notificationRecieved' function.
      *
      *   If your module does not already overridde the function, use the snippet below
      *      notificationReceived: function(notification, payload, sender) {
-     *          if (this.validateKeyPress(notification, payload)) { return; }
+     *          if (this.validate(notification, payload)) { return; }
      *      },
      *
      */
-    validateKeyPress: function(notification, payload) {
+    validate: function(notification, payload) {
         // Handle KEYPRESS mode change events from the MMM-KeyBindings Module
         if (notification === "KEYPRESS_MODE_CHANGED") {
-            this.currentKeyPressMode = payload;
+            this.currentMode = payload;
             return true;
         }
 
@@ -118,11 +109,11 @@ let keyBindings = {
         // if (notification === "KEYPRESS") { console.log(payload); }
 
         // Validate Keypresses
-        if (notification === "KEYPRESS" && this.currentKeyPressMode === this.config.keyBindingsMode) {
-            if (this.config.kbMultiInstance && payload.Sender !== payload.instance) {
+        if (notification === "KEYPRESS" && this.currentMode === this.config.mode) {
+            if (this.config.multiInstance && payload.sender !== payload.instance) {
                 return false; // Wrong Instance
             }
-            if (!(payload.keyName in this.reverseKBMap)) {
+            if (!(payload.keyName in this.reverseMap)) {
                 return false; // Not a key we listen for
             }
             this.validKeyPress(payload);
@@ -130,20 +121,20 @@ let keyBindings = {
         }
 
         // Test for focus key pressed and need to take focus:
-        if (notification === "KEYPRESS" && ("keyBindingsTakeFocus" in this.config)) {
-            if (this.currentKeyPressMode === this.config.keyBindingsMode) {
+        if (notification === "KEYPRESS" && ("takeFocus" in this.config)) {
+            if (this.currentMode === this.config.mode) {
                 return false; // Already have focus.
             }
-            if (this.config.kbMultiInstance && payload.Sender !== this.kbInstance) {
+            if (this.config.multiInstance && payload.sender !== this.instance) {
                 return false; // Wrong Instance
             }
-            if (typeof this.config.keyBindingsTakeFocus === "object") {
-                if (this.config.keyBindingsTakeFocus.keyPress !== payload.keyPress ||
-                    this.config.keyBindingsTakeFocus.keyState !== payload.keyState) {
+            if (typeof this.config.takeFocus === "object") {
+                if (this.config.takeFocus.keyPress !== payload.keyPress ||
+                    this.config.takeFocus.keyState !== payload.keyState) {
                     return false; // Wrong keyName/KeyPress Combo
                 }
-            } else if (typeof this.config.keyBindingsTakeFocus === "string" &&
-                payload.keyName !== this.config.keyBindingsTakeFocus) {
+            } else if (typeof this.config.takeFocus === "string" &&
+                payload.keyName !== this.config.takeFocus) {
                 return false; // Wrong Key;
             }
 
@@ -166,9 +157,9 @@ let keyBindings = {
         console.log(kp.keyName);
 
         // Example for responding to "Left" and "Right" arrow
-        if (kp.keyName === this.config.keyBindings.Right) {
+        if (kp.keyName === this.config.map.Right) {
             console.log("RIGHT KEY WAS PRESSED!");
-        } else if (kp.keyName === this.config.keyBindings.Left) {
+        } else if (kp.keyName === this.config.map.Left) {
             console.log("LEFT KEY WAS PRESSED!");
         }
     },
@@ -184,8 +175,8 @@ let keyBindings = {
      */
     keyPressFocusReceived: function(kp) {
         console.log(this.name + "HAS FOCUS!");
-        this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.keyBindingsMode);
-        this.currentKeyPressMode = this.config.keyBindingsMode;
+        this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.mode);
+        this.currentMode = this.config.mode;
         // DO ANYTHING YOU NEED
     },
 
@@ -201,9 +192,29 @@ let keyBindings = {
     keyPressReleaseFocus: function() {
         console.log(this.name + "HAS RELEASED FOCUS!");
         this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
-        this.currentKeyPressMode = "DEFAULT";
-        // DO ANYTHING YOU NEED
+        this.currentMode = "DEFAULT";
     },
+});
 
-    // DO NOT COPY BELOW THIS LINE
+KeyHandler.definitions = {};
+
+KeyHandler.create = function(name, config) {
+
+    // Make sure module definition is available.
+    if (!KeyHandler.definitions[name]) {
+        return;
+    }
+
+    var handlerDefinition = KeyHandler.definitions[name];
+    var clonedDefinition = cloneObject(handlerDefinition);
+
+    // Note that we clone the definition. Otherwise the objects are shared, which gives problems.
+    var KeyHandlerClass = KeyHandler.extend(clonedDefinition);
+
+    return new KeyHandlerClass(name, config);
+
+};
+
+KeyHandler.register = function(name, handlerDefinition) {
+    KeyHandler.definitions[name] = handlerDefinition;
 };

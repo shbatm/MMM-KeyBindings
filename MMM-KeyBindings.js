@@ -6,10 +6,7 @@
  * MIT Licensed.
  */
 /* jshint esversion:6 */
-(function() {
-    // Establish the root object, `window` in the browser, or `global` on the server.
-    var global = this;
-})();
+var global = this;
 
 Module.register("MMM-KeyBindings", {
     defaults: {
@@ -17,7 +14,7 @@ Module.register("MMM-KeyBindings", {
         // 'KEY_HOLD' but evdev.raw_mode must be true to receive
         handleKeys: [], // List of additional keys to handle in this module; blank == standard set
         disableKeys: [], // list of keys to ignore from the default set.
-        enableMousetrap: false,
+        enableKeyboard: false,
         evdev: {
             enabled: true,
             eventPath: '/dev/input/btremote',
@@ -74,7 +71,7 @@ Module.register("MMM-KeyBindings", {
     },
 
     getScripts: function() {
-        return ['mousetrap.min.js', 'mousetrap-global-bind.min.js'];
+        return ['keyHandler.js', 'mousetrap.min.js', 'mousetrap-global-bind.min.js'];
     },
 
     setupMousetrap: function() {
@@ -167,8 +164,7 @@ Module.register("MMM-KeyBindings", {
 
     notificationReceived: function(notification, payload, sender) {
         if (notification === "DOM_OBJECTS_CREATED") {
-            if (this.config.enableMousetrap && !(this.config.enableNotifyServer &&
-                    this.instance === "SERVER")) {
+            if (this.config.enableKeyboard) {
                 console.log("Setting up Mousetrap keybindings.");
                 this.setupMousetrap();
             }
@@ -180,7 +176,7 @@ Module.register("MMM-KeyBindings", {
 
     doAction: function(payload) {
         let action = this.config.actions.find(k => k.name === payload.keyName);
-        if (action.length > 0) {
+        if (action) {
             if (action.state && action.state !== payload.keyState) { return; }
             if (action.instance && action.instance !== payload.sender) { return; }
             if (action.mode && action.mode !== payload.currentMode) { return; }
