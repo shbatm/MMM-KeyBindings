@@ -22,7 +22,7 @@ let keyBindings = {
         keyBindingsMode: "DEFAULT",
         keyBindings: {
             /* Add each key you want to respond to in the form:
-             *      yourKeyName: "KeyName_from_MMM-KeyBindings"
+             *      yourkeyName: "keyName_from_MMM-KeyBindings"
              */
             Right: "ArrowRight",
             Left: "ArrowLeft",
@@ -65,7 +65,7 @@ let keyBindings = {
          */
         keyBindingsTakeFocus: "Enter",
         /* OR AS AN OBJECT: */
-        // keyBindingsTakeFocus: { KeyName: "Enter", KeyState: "KEY_LONGPRESSED" }
+        // keyBindingsTakeFocus: { keyName: "Enter", keyState: "KEY_LONGPRESSED" }
     },
 
     /*** setupKeyBindings ***
@@ -80,7 +80,9 @@ let keyBindings = {
      *      },
      *
      */
-    setupKeyBindings: function() {
+    setupKeyBindings: function(config) {
+        this.config = Object.assign({}, this.defaults, config);
+
         this.currentKeyPressMode = "DEFAULT";
         if (typeof this.config.kbMultiInstance === undefined) {
             this.config.kbMultiInstance = true;
@@ -120,7 +122,7 @@ let keyBindings = {
             if (this.config.kbMultiInstance && payload.Sender !== payload.instance) {
                 return false; // Wrong Instance
             }
-            if (!(payload.KeyName in this.reverseKBMap)) {
+            if (!(payload.keyName in this.reverseKBMap)) {
                 return false; // Not a key we listen for
             }
             this.validKeyPress(payload);
@@ -136,12 +138,12 @@ let keyBindings = {
                 return false; // Wrong Instance
             }
             if (typeof this.config.keyBindingsTakeFocus === "object") {
-                if (this.config.keyBindingsTakeFocus.KeyPress !== payload.KeyPress ||
-                    this.config.keyBindingsTakeFocus.KeyState !== payload.KeyState) {
-                    return false; // Wrong KeyName/KeyPress Combo
+                if (this.config.keyBindingsTakeFocus.keyPress !== payload.keyPress ||
+                    this.config.keyBindingsTakeFocus.keyState !== payload.keyState) {
+                    return false; // Wrong keyName/KeyPress Combo
                 }
             } else if (typeof this.config.keyBindingsTakeFocus === "string" &&
-                payload.KeyName !== this.config.keyBindingsTakeFocus) {
+                payload.keyName !== this.config.keyBindingsTakeFocus) {
                 return false; // Wrong Key;
             }
 
@@ -161,12 +163,12 @@ let keyBindings = {
      *
      */
     validKeyPress: function(kp) {
-        console.log(kp.KeyName);
+        console.log(kp.keyName);
 
         // Example for responding to "Left" and "Right" arrow
-        if (kp.KeyName === this.config.keyBindings.Right) {
+        if (kp.keyName === this.config.keyBindings.Right) {
             console.log("RIGHT KEY WAS PRESSED!");
-        } else if (kp.KeyName === this.config.keyBindings.Left) {
+        } else if (kp.keyName === this.config.keyBindings.Left) {
             console.log("LEFT KEY WAS PRESSED!");
         }
     },

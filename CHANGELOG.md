@@ -1,3 +1,10 @@
+## [1.3.0] - [BREAKING CHANGES] Remove server controls in favor of External Modules
+
+* Overall goal of simplifying this module.
+* Removed all server-side controls from this module (monitor toggle, external interupts) in favor of declaring actions and sending notifications to other modules instead.
+* Removed Notify Server in favor of extensible REST API being developed for [MMM-Remote-Control](https://github.com/Jopyth/MMM-Remote-Control/pull/104)
+* Added [Actions](README.md#Actions) to send notifications on a keypress rather than rely on other modules to actively listen for them.
+
 ## [1.2.0] - Change to use native NodeJS event monitoring
 
 * Simplified device connections by using native NodeJS modules for detecting keypresses (node-evdev and node-udev) instead of using a separate python daemon.
