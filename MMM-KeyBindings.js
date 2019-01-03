@@ -177,7 +177,7 @@ Module.register("MMM-KeyBindings", {
     },
 
     doAction: function(payload) {
-        let action = this.config.actions.find(k => k.name === payload.keyName);
+        let action = this.config.actions.find(k => k.key === payload.keyName);
         if (action) {
             if (action.state && action.state !== payload.keyState) { return; }
             if (action.instance && action.instance !== payload.sender) { return; }
@@ -187,7 +187,7 @@ Module.register("MMM-KeyBindings", {
                 this.currentKeyPressMode = action.changeMode;
                 this.sendNotification("KEYPRESS_MODE_CHANGED", action.changeMode);
             } else {
-                this.sendNotification(payload.notification, payload.payload);
+                this.sendNotification(action.notification, action.payload);
             }
         }
     }
