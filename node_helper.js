@@ -23,7 +23,9 @@ module.exports = NodeHelper.create({
             try {
                 this.udevMonitor.close();
             } catch (e) {
-                console.error(e);
+                if (e.indexOf("Cannot read property 'close' of undefined") === -1) {
+                    console.error(e);
+                }
             }
             try {
                 this.evdevReader.close();
@@ -72,8 +74,8 @@ module.exports = NodeHelper.create({
                 if ("code" in this.pendingKeyPress && this.pendingKeyPress.code === data.code) {
                     console.log(`${this.pendingKeyPress.code} ${(this.pendingKeyPress.value===2) ? "long " : ""}pressed.`);
                     this.sendSocketNotification("KEYPRESS", {
-                        'KeyName': data.code,
-                        'KeyState': (this.pendingKeyPress.value === 2) ? "KEY_LONGPRESSED" : "KEY_PRESSED"
+                        'keyName': data.code,
+                        'keyState': (this.pendingKeyPress.value === 2) ? "KEY_LONGPRESSED" : "KEY_PRESSED"
                     });
                 }
                 this.pendingKeyPress = {};
