@@ -64,6 +64,7 @@ var KeyHandler = Class.extend({
         takeFocus: "Enter",
         /* OR AS AN OBJECT: */
         // takeFocus: { keyName: "Enter", keyState: "KEY_LONGPRESSED" }
+        debug: false,
     },
 
     /* init()
@@ -105,7 +106,7 @@ var KeyHandler = Class.extend({
         }
 
         // Uncomment line below for diagnostics & to confirm keypresses are being recieved
-        if (notification === "KEYPRESS") { console.log(payload); }
+        if (notification === "KEYPRESS" && this.debug) { console.log(payload); }
 
         // Validate Keypresses
         if (notification === "KEYPRESS" && this.currentMode === this.config.mode) {

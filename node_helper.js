@@ -23,7 +23,7 @@ module.exports = NodeHelper.create({
             try {
                 this.udevMonitor.close();
             } catch (e) {
-                if (e.indexOf("Cannot read property 'close' of undefined") === -1) {
+                if (e.toString().indexOf("Cannot read property 'close' of undefined") === -1) {
                     console.error(e);
                 }
             }
