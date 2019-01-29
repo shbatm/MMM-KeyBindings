@@ -16,7 +16,9 @@
   "scripts": {
     "preinstall": "./preinstall.sh",
     "postinstall": "./postinstall.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "author": "shbatm",
   "license": "MIT",
@@ -26,9 +28,11 @@
   "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "dependencies": {
     "evdev": "github:shbatm/node-evdev",
-    "udev": "github:cheery/node-udev"
+    "udev": "github:cheery/node-udev",
+    "snyk": "^1.123.0"
   },
   "devDependencies": {
     "electron-rebuild": "^1.8.2"
-  }
+  },
+  "snyk": true
 }
