@@ -177,18 +177,20 @@ Module.register("MMM-KeyBindings", {
     },
 
     doAction: function(payload) {
-        let action = this.config.actions.find(k => k.key === payload.keyName);
+        let action = this.config.actions.filter(k => k.key === payload.keyName);
         if (action) {
-            if (action.state && action.state !== payload.keyState) { return; }
-            if (action.instance && action.instance !== payload.sender) { return; }
-            if (action.mode && action.mode !== payload.currentMode) { return; }
+            action.forEach(a => {
+                if (a.state && a.state !== payload.keyState) { return; }
+                if (a.instance && a.instance !== payload.sender) { return; }
+                if (a.mode && a.mode !== payload.currentMode) { return; }
 
-            if ("changeMode" in action) {
-                this.currentKeyPressMode = action.changeMode;
-                this.sendNotification("KEYPRESS_MODE_CHANGED", action.changeMode);
-            } else {
-                this.sendNotification(action.notification, action.payload);
-            }
+                if ("changeMode" in a) {
+                    this.currentKeyPressMode = a.changeMode;
+                    this.sendNotification("KEYPRESS_MODE_CHANGED", a.changeMode);
+                } else {
+                    this.sendNotification(a.notification, a.payload);
+                }
+            });
         }
     }
 });

@@ -1,3 +1,7 @@
+## [1.3.1] - Allow multiple actions for the same key (#7)
+
+* Allow for multiple actions to be assigned to the same key, for example, different actions for "KEY_PRESSED" and "KEY_LONGPRESSED".
+
 ## [1.3.0] - [BREAKING CHANGES] Remove server controls in favor of External Modules
 
 * Overall goal of simplifying this module.
