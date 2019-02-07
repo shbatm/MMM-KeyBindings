@@ -51,6 +51,7 @@ git clone https://github.com/shbatm/MMM-KeyBindings
 
 | Option                | Description
 |:---------------------:|-----------
+| `enableKeyboard` | Whether or not to capture keys from a standard keyboard. <br>*Optional* Default: `false` - keyboard is not enabled. Set to `true` to enable a standard keyboard. Make sure no other modules are using the keyboard (e.g. MMM-OnScreenMenu).
 | `enabledKeyStates`    | Array of Key States that the module should handle.  <br />*Default:* `KEY_PRESSED` & `KEY_LONGPRESSED`
 | `handleKeys`          | Array of additional keys to handle in this module above the standard set,  <br /> Reference [Mousetrap API](https://craig.is/killing/mice) for the available key enumerations.
 | `disableKeys`         | Array of keys to ignore from the default set.
@@ -63,13 +64,13 @@ git clone https://github.com/shbatm/MMM-KeyBindings
 
 #### Standard: Using FireStick Remote Locally and a Keyboard on Remote Browser
 
-The config below uses the default [special keys](SpecialKeys) for the Fire Stick remote: short-pressing the 'Home' button will turn on the screen if it's off. Long-pressing 'Home' will turn off the screen if it's on.
+The config below uses the default [special keys](SpecialKeys) for the Fire Stick remote: Long-pressing 'Home' will toggle the screen on/off.
 
 ```js
 {
     module: 'MMM-KeyBindings',
     config: {
-        enableMousetrap: true
+        enableKeyboard: true
     }
 },
 ```
@@ -80,7 +81,7 @@ The config below uses the default [special keys](SpecialKeys) for the Fire Stick
     module: 'MMM-KeyBindings',
     config: {
         evdev: { enabled: false },
-        enableMousetrap: true,
+        enableKeyboard: true,
     }
 },
 ```
@@ -112,7 +113,7 @@ keyMap: {
 1. Add the whole evdevKeymap above to your config section.
 2. Change `ArrowRight: "KEY_RIGHT"` to `k: "KEY_RIGHT"`
 3. If you want to also be able to use a keyboard when using a remote browser:
-    * Make sure `enableMousetrap: true` is in your config and then add: `handleKeys: [ 'k' ]` to tell Mousetrap to bind to the "k" key. This is required because by default Mousetrap only binds to the same keys as those in the key map above.
+    * Make sure `enableKeyboard: true` is in your config and then add: `handleKeys: [ 'k' ]` to tell Mousetrap to bind to the "k" key. This is required because by default Mousetrap only binds to the same keys as those in the key map above.
 
 ## Actions
 
