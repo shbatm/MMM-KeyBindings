@@ -9,7 +9,7 @@
 
 
 # Get the version of electron used by MagicMirror and rebuild native packages
-ELECVERSION=$(node -pe "require('/home/pi/MagicMirror/node_modules/electron/package.json').version");
+ELECVERSION=$(node -pe "require('../../node_modules/electron/package.json').version");
 ./node_modules/.bin/electron-rebuild -f -w evdev,udev -v $ELECVERSION;
 
 exit 0;

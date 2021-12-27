@@ -25,10 +25,11 @@
   },
   "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "dependencies": {
-    "evdev": "github:shbatm/node-evdev",
-    "udev": "github:cheery/node-udev"
+    "evdev": "^0.3.0",
+    "node-gyp": "^8.4.1",
+    "udev": "^1.0.0"
   },
   "devDependencies": {
-    "electron-rebuild": "^1.8.2"
+    "electron-rebuild": "^3.2.5"
   }
 }
