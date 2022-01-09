@@ -26,8 +26,8 @@ PACKAGE="libudev-dev"
 
 if [ $(dpkg-query -W -f='${Status}' $PACKAGE 2>/dev/null | grep -c "ok installed") -eq 0 ];
 then
-    sudo apt update;
-    sudo apt install -y $PACKAGE;
+    sudo apt update
+    sudo apt install -y $PACKAGE
 else
-    echo "$PACKAGE is already installed. Moving on.";
+    echo "$PACKAGE is already installed. Moving on."
 fi
