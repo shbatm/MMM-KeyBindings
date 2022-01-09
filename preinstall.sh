@@ -14,7 +14,7 @@
 #               : "cat /proc/bus/input/devices" to get the Name to use.
 #==============================================================================
 
-echo "Check for required Debian PACKAGE_UDEVs"
+echo "Check for required Debian packages"
 PACKAGE_BUILDESSENTIAL="build-essential"
 if [ $(dpkg-query -W -f='${Status}' $PACKAGE_BUILDESSENTIAL 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
   echo " Install $PACKAGE_BUILDESSENTIAL"
@@ -25,13 +25,12 @@ else
 fi
 
 PACKAGE_UDEV="libudev-dev"
-
-if [ $(dpkg-query -W -f='${Status}' $PACKAGE_UDEV 2>/dev/null | grep -c "ok installed") -eq 0 ];
-then
-    sudo apt update
-    sudo apt install -y $PACKAGE_UDEV
+if [ $(dpkg-query -W -f='${Status}' $PACKAGE_UDEV 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+  echo " Install $PACKAGE_UDEV"
+  sudo apt update
+  sudo apt install -y $PACKAGE_UDEV
 else
-    echo "$PACKAGE_UDEV is already installed. Moving on."
+  echo " $PACKAGE_UDEV is already installed."
 fi
 
 echo "Copy the udev rules file to the correct location"
