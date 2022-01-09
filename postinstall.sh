@@ -2,8 +2,8 @@
 # Title         : postinstall.sh
 # Description   : This script will create a udev symlink for a Bluetooth Remote
 # Author        : shbatm
-# Date          : 2018-12-03
-# Version       : 0.0.1
+# Date          : 2021-01-09
+# Version       : 0.0.2
 # Usage         : ./postinstall.sh
 #==============================================================================
 
