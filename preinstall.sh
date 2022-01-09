@@ -14,13 +14,14 @@
 #               : "cat /proc/bus/input/devices" to get the Name to use.
 #==============================================================================
 
-# Copy the udev rules file to the correct location
+echo "Copy the udev rules file to the correct location"
 sudo cp 99-btremote.rules /etc/udev/rules.d/
-# Reload the udev rules
+
+echo "Reload the udev rules"
 sudo udevadm control -R
 
 
-# Check for required Debian packages
+echo "Check for required Debian packages"
 PACKAGE="libudev-dev"
 
 if [ $(dpkg-query -W -f='${Status}' $PACKAGE 2>/dev/null | grep -c "ok installed") -eq 0 ];
