@@ -30,6 +30,6 @@
     "udev": "^1.0.0"
   },
   "devDependencies": {
-    "electron-rebuild": "^3.2.6"
+    "electron-rebuild": "^3.2.7"
   }
 }
