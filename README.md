@@ -19,7 +19,7 @@ The primary features are:
 To use this module, add the following configuration block to the modules array in the `config/config.js` file:
 
 ```js
-var config = {
+let config = {
     modules: [
         {
             module: 'MMM-KeyBindings',
