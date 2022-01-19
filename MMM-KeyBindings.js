@@ -64,7 +64,7 @@ Module.register("MMM-KeyBindings", {
   requiresVersion: "2.3.0", // Required version of MagicMirror
 
   start: function () {
-    console.log(this.name + " has started...");
+    Log.info(this.name + " has started...");
 
     // Allow Legacy Config Settings:
     if (this.config.evdevKeyMap) {
@@ -131,7 +131,7 @@ Module.register("MMM-KeyBindings", {
       }
     }
 
-    // console.log(keys);
+    // Log.log(keys);
 
     Mousetrap.bindGlobal(keys, (e) => {
       // Prevent the default action from occuring
@@ -194,7 +194,7 @@ Module.register("MMM-KeyBindings", {
 
   // socketNotificationReceived from helper
   socketNotificationReceived: function (notification, payload) {
-    // console.log("Working notification system. Notification:", notification, "payload: ", payload);
+    // Log.log("Working notification system. Notification:", notification, "payload: ", payload);
     if (notification === "KEYPRESS") {
       if (this.config.enabledKeyStates.indexOf(payload.keyState) > -1) {
         this.handleEvDevKeyPressEvents(payload);
@@ -205,7 +205,7 @@ Module.register("MMM-KeyBindings", {
   notificationReceived: function (notification, payload, sender) {
     if (notification === "DOM_OBJECTS_CREATED") {
       if (this.config.enableKeyboard) {
-        console.log("Setting up Mousetrap keybindings.");
+        Log.log("Setting up Mousetrap keybindings.");
         this.setupMousetrap();
       }
     }
