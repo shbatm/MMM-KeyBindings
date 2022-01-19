@@ -1,4 +1,4 @@
-/* global document, Module, window, Mousetrap, console */
+/* global Mousetrap */
 /* Magic Mirror
  * Module: MMM-KeyBindings
  *
