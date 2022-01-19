@@ -1,9 +1,10 @@
+# Changelog
+
 ## [1.3.2] - Fix installation problems and minor changes
 
 * Fix installation problems (#10)
 * Update dependencies
 * Code cleanup
-
 
 ## [1.3.1] - Allow multiple actions for the same key (#7)
 
