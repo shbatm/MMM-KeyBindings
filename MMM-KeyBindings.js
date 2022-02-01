@@ -89,8 +89,8 @@ Module.register("MMM-KeyBindings", {
   getScripts: function () {
     return [
       "keyHandler.js",
-      "mousetrap.min.js",
-      "mousetrap-global-bind.min.js"
+      this.file("node_modules/mousetrap/mousetrap.min.js"),
+      this.file("node_modules/mousetrap-global-bind/mousetrap-global-bind.min.js")
     ];
   },
 
