@@ -1,4 +1,4 @@
-/* Magic Mirror
+/* MagicMirror²
  * Node Helper: MMM-KeyBindings
  *
  * By shbatm
@@ -8,12 +8,13 @@
 
 const NodeHelper = require("node_helper");
 const Log = require("logger");
+
 var evdev;
 var udev;
 
 module.exports = NodeHelper.create({
   start: function () {
-    Log.log("MMM-KeyBindings helper has started...");
+    Log.log("MMM-KeyBindings helper has started…");
     this.evdevMonitorCreated = false;
   },
 
@@ -101,9 +102,7 @@ module.exports = NodeHelper.create({
       .on("error", (e) => {
         if (e.code === "ENODEV" || e.code === "ENOENT") {
           Log.info(
-            "EVDEV: Device not connected, nothing at path " +
-              e.path +
-              ", waiting for device..."
+            `EVDEV: Device not connected, nothing at path ${e.path}, waiting for device…`
           );
           this.waitForDevice();
         } else {

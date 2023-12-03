@@ -1,5 +1,5 @@
 /* global Mousetrap */
-/* Magic Mirror
+/* MagicMirror²
  * Module: MMM-KeyBindings
  *
  * By shbatm
@@ -64,7 +64,7 @@ Module.register("MMM-KeyBindings", {
   requiresVersion: "2.3.0", // Required version of MagicMirror
 
   start: function () {
-    Log.info(this.name + " has started...");
+    Log.info(`${this.name} has started…`);
 
     // Allow Legacy Config Settings:
     if (this.config.evdevKeyMap) {

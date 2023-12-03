@@ -158,7 +158,7 @@ var KeyHandler = Class.extend({
    *
    */
   focusReceived: function () {
-    console.log(this.name + " HAS FOCUS!");
+    console.log(`${this.name} HAS FOCUS!`);
     this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.mode);
     this.currentMode = this.config.mode;
     this.onFocus();
@@ -173,7 +173,7 @@ var KeyHandler = Class.extend({
    *
    */
   releaseFocus: function () {
-    console.log(this.name + " HAS RELEASED FOCUS!");
+    console.log(`${this.name} HAS RELEASED FOCUS!`);
     this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
     this.currentMode = "DEFAULT";
     this.onFocusReleased();
