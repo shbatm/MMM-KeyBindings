@@ -7,11 +7,11 @@ The MMM-KeyBindings Module is a helper module that provides a method for control
 The primary features are:
 
 1. Control from Amazon Fire Stick remote control or other bluetooth device. See: [Why Fire Stick?](https://github.com/shbatm/MMM-KeyBindings/wiki/Background-Information#WhyFire)
-2. Customizeable keyboard navigation and control.
+2. Customizable keyboard navigation and control.
    - Basic navigation keys are captured, but this can be changed in the config.
-3. Key Presses are sent other modules for action via notifcation.
+3. Key Presses are sent other modules for action via notification.
 4. Assign keys to perform certain actions automatically (e.g. turn on/off the monitor when the HOME key is pressed, using MMM-Remote-Control).
-5. Allows a module to "take focus", allowing other modules to ingore keypresses when a particular module has focus (e.g. in a pop-up menu).
+5. Allows a module to "take focus", allowing other modules to ignore keypresses when a particular module has focus (e.g. in a pop-up menu).
 6. Allows for multiple instances of the MagicMirror to be open on different screens and be independently controlled.
 
 ## Using the module
