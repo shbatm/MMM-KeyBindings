@@ -2,29 +2,29 @@
   "name": "mmm-keybindings",
   "version": "1.3.3",
   "description": "Module to provide keyboard or Bluetooth Remote Control key bindings to control various aspects of the MagicMirror² through socket notifications.",
-  "main": "MMM-KeyBindings.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/shbatm/MMM-KeyBindings.git"
-  },
   "keywords": [
     "MagicMirror",
     "Fire Stick",
     "remote control",
     "Keyboard"
   ],
+  "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
+  "bugs": {
+    "url": "https://github.com/shbatm/MMM-KeyBindings/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shbatm/MMM-KeyBindings.git"
+  },
+  "license": "MIT",
+  "author": "shbatm",
+  "main": "MMM-KeyBindings.js",
   "scripts": {
     "preinstall": "./preinstall.sh",
     "postinstall": "./postinstall.sh",
     "simple-setup": "npm install mousetrap mousetrap-global-bind",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "shbatm",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/shbatm/MMM-KeyBindings/issues"
-  },
-  "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "dependencies": {
     "evdev": "^0.3.0",
     "mousetrap": "^1.6.5",
