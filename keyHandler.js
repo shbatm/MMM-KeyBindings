@@ -1,5 +1,3 @@
-/* jshint esversion:6 */
-
 /**** Extending your module to work with MMM-KeyBindings *****
  *
  *  Use the code below in your module to accept key press

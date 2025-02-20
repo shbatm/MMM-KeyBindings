@@ -4,7 +4,6 @@
  * By shbatm
  * MIT Licensed.
  */
-/* jshint node: true, esversion: 6*/
 
 const NodeHelper = require("node_helper");
 const Log = require("logger");

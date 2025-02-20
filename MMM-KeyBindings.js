@@ -5,7 +5,6 @@
  * By shbatm
  * MIT Licensed.
  */
-/* jshint esversion:6 */
 var global = this;
 
 Module.register("MMM-KeyBindings", {
