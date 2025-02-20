@@ -38,9 +38,12 @@ You can then configure other modules to handle the key presses and, if necessary
 ```shell
 cd ~/MagicMirror/modules
 git clone https://github.com/shbatm/MMM-KeyBindings
+cd MMM-KeyBindings
 ```
 
-_NOTE:_ If you are not planning to use this module with anything but a standard keyboard. STOP HERE. For advanced control using something like the Amazon Fire TV Remote, continue with the steps below:
+_NOTE:_ If you are not planning to use this module with anything but a standard keyboard: Run `npm run simple-setup` to install the module without `udev` and the `evdev` daemon. Skip the rest of the steps in this section.
+
+For advanced control using something like the Amazon Fire TV Remote, continue with the following steps:
 
 1. Connect your device and make sure it's recognized (for example, using the Desktop bluetooth device menu). See instructions [here](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Setup)
 2. Find the "Name" of the device using one of the two methods below:
