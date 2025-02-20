@@ -52,6 +52,19 @@ For advanced control using something like the Amazon Fire TV Remote, continue wi
 3. Edit the `99-btremote.rules` file in this module's directory to use the name you found.
 4. Run `cd ~/MagicMirror/modules/MMM-KeyBindings && npm install`.
 
+## Update
+
+Just enter the module's directory, pull the update and install the dependencies:
+
+```bash
+cd ~/MagicMirror/modules/MMM-KeyBindings
+git pull
+```
+
+If you had choosen the simple setup, run `npm run simple-setup` again to install the module without `udev` and the `evdev` daemon.
+
+If you had choosen the advanced setup, run `npm install` again to install the dependencies.
+
 ## Configuration options
 
 ### (samples below)
