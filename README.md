@@ -188,3 +188,7 @@ This module was created as a stepping stone to allow other modules to be tweaked
 
 - The following only work with `evdev` / remote control on the main screen. When using `Mousetrap` for keyboard events, these pass like regular key presses or flat-out don't work:
   - `KEY_LONGPRESS`
+
+## Code of Conduct
+
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
