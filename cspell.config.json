@@ -1,0 +1,32 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "btremote",
+    "BUILDESSENTIAL",
+    "DEVLINKS",
+    "DEVNAME",
+    "ELECVERSION",
+    "evdev",
+    "evtest",
+    "FASTFORWARD",
+    "keymap",
+    "Keypresses",
+    "KPENTER",
+    "Kristjan",
+    "libudev",
+    "LONGPRESSED",
+    "MONITORTOGGLE",
+    "MYKEYWORD",
+    "nexttrack",
+    "occuring",
+    "PLAYPAUSE",
+    "previoustrack",
+    "pylogging",
+    "shbatm",
+    "SUBCLASSABLE",
+    "udevadm"
+  ],
+  "ignorePaths": ["node_modules/**"],
+  "dictionaries": ["node"]
+}
