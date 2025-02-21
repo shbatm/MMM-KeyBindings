@@ -26,13 +26,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@electron/rebuild": "^3.7.1",
     "evdev": "^0.3.0",
     "mousetrap": "^1.6.5",
     "mousetrap-global-bind": "^1.1.0",
-    "node-gyp": "^10.0.1",
     "udev": "^1.0.1"
   },
-  "devDependencies": {
-    "@electron/rebuild": "^3.4.0"
-  }
+  "devDependencies": {}
 }
