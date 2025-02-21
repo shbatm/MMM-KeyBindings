@@ -19,16 +19,13 @@ The primary features are:
 To use this module, add the following configuration block to the modules array in the `config/config.js` file:
 
 ```js
-let config = {
-  modules: [
+
     {
       module: "MMM-KeyBindings",
       config: {
         // See below for configurable options
       }
-    }
-  ]
-}
+    },
 ```
 
 You can then configure other modules to handle the key presses and, if necessary, request focus so only that module will respond to the keys (e.g. for a menu). See [Handling Keys in Other Modules](https://github.com/shbatm/MMM-KeyBindings/wiki/Integration-into-Other-Modules)
@@ -61,9 +58,9 @@ cd ~/MagicMirror/modules/MMM-KeyBindings
 git pull
 ```
 
-If you had choosen the simple setup, run `npm run simple-setup` again to install the module without `udev` and the `evdev` daemon.
+If you had chosen the simple setup, run `npm run simple-setup` again to install the module without `udev` and the `evdev` daemon.
 
-If you had choosen the advanced setup, run `npm install` again to install the dependencies.
+If you had chosen the advanced setup, run `npm install` again to install the dependencies.
 
 ## Configuration options
 
@@ -184,7 +181,7 @@ actions: [
     state: "KEY_LONGPRESSED",
     changeMode: "DEFAULT"
   }
-]
+],
 ```
 
 ## Handling Keys in Another Module
@@ -200,7 +197,7 @@ This module was created as a stepping stone to allow other modules to be tweaked
 ## Known Issues
 
 - The following only work with `evdev` / remote control on the main screen. When using `Mousetrap` for keyboard events, these pass like regular key presses or flat-out don't work:
-  - `KEY_LONGPRESS`
+  - `KEY_LONGPRESSED`
 
 ## Code of Conduct
 

@@ -1,11 +1,6 @@
 /* global Mousetrap */
-/* MagicMirror²
- * Module: MMM-KeyBindings
- *
- * By shbatm
- * MIT Licensed.
- */
-var global = this;
+
+const global = this;
 
 Module.register("MMM-KeyBindings", {
   defaults: {
@@ -38,15 +33,17 @@ Module.register("MMM-KeyBindings", {
         instance: "SERVER",
         mode: "DEFAULT",
         notification: "REMOTE_ACTION",
-        payload: { action: "MONITORTOGGLE" }
-        // Can also be:
-        // changeMode: "NEW_MODE"
-        // instead of notification & payload
+        payload: {action: "MONITORTOGGLE"}
+        /*
+         * Can also be:
+         * changeMode: "NEW_MODE"
+         * instead of notification & payload
+         */
       }
     ]
   },
 
-  // Allow for control on muliple instances
+  // Allow for control on multiple instances
   instance:
     global.location &&
     [
@@ -62,7 +59,7 @@ Module.register("MMM-KeyBindings", {
 
   requiresVersion: "2.3.0", // Required version of MagicMirror
 
-  start: function () {
+  start () {
     Log.info(`${this.name} has started…`);
 
     // Allow Legacy Config Settings:
@@ -78,14 +75,14 @@ Module.register("MMM-KeyBindings", {
 
     // Generate a reverse key map
     this.reverseKeyMap = {};
-    for (var eKey in this.config.keyMap) {
-      if (this.config.keyMap.hasOwnProperty(eKey)) {
+    for (const eKey in this.config.keyMap) {
+      if (Object.hasOwn(this.config.keyMap, eKey)) {
         this.reverseKeyMap[this.config.keyMap[eKey]] = eKey;
       }
     }
   },
 
-  getScripts: function () {
+  getScripts () {
     return [
       "keyHandler.js",
       this.file("node_modules/mousetrap/mousetrap.min.js"),
@@ -93,9 +90,9 @@ Module.register("MMM-KeyBindings", {
     ];
   },
 
-  setupMousetrap: function () {
-    var self = this;
-    var keys = [
+  setupMousetrap () {
+    const self = this;
+    let keys = [
       "home",
       "enter",
       "left",
@@ -108,29 +105,31 @@ Module.register("MMM-KeyBindings", {
       "previoustrack",
       "Menu"
     ];
-    var keyCodes = {
+    const keyCodes = {
       179: "playpause",
       178: "nexttrack",
       177: "previoustrack",
       93: "Menu"
     };
-    var keyMap = { ContextMenu: "Menu" };
+    const keyMap = {ContextMenu: "Menu"};
 
     Mousetrap.addKeycodes(keyCodes);
 
-    // Add extra keys (must be in Mousetrap form)
-    // TODO: Add ability to add extra keycodes as well
+    /*
+     * Add extra keys (must be in Mousetrap form)
+     * TODO: Add ability to add extra keycodes as well
+     */
     keys = keys.concat(this.config.handleKeys);
 
     // Remove Disabled Keys
-    for (var i = this.config.disableKeys.length - 1; i >= 0; i--) {
-      var j = keys.indexOf(this.config.disableKeys[i]);
+    for (let i = this.config.disableKeys.length - 1; i >= 0; i--) {
+      const j = keys.indexOf(this.config.disableKeys[i]);
       if (j > -1) {
         keys.splice(j, 1);
       }
     }
 
-    // Log.log(keys);
+    Log.debug(keys);
 
     Mousetrap.bindGlobal(keys, (e) => {
       // Prevent the default action from occuring
@@ -141,7 +140,7 @@ Module.register("MMM-KeyBindings", {
         e.returnValue = false;
       }
 
-      var payload = {};
+      const payload = {};
       payload.keyName = e.key;
 
       // Standardize the name
@@ -173,12 +172,14 @@ Module.register("MMM-KeyBindings", {
     );
   },
 
-  handleEvDevKeyPressEvents: function (payload) {
+  handleEvDevKeyPressEvents (payload) {
     // Add the current mode to the payload
     payload.currentMode = this.currentKeyPressMode;
 
-    // Add the sender to the payload (useful if you have multiple clients connected;
-    // the evdev keys only work on the main server)
+    /*
+     * Add the sender to the payload (useful if you have multiple clients connected;
+     * the evdev keys only work on the main server)
+     */
     payload.sender = "SERVER";
     payload.protocol = "evdev";
     payload.instance = this.instance;
@@ -192,7 +193,7 @@ Module.register("MMM-KeyBindings", {
   },
 
   // socketNotificationReceived from helper
-  socketNotificationReceived: function (notification, payload) {
+  socketNotificationReceived (notification, payload) {
     // Log.log("Working notification system. Notification:", notification, "payload: ", payload);
     if (notification === "KEYPRESS") {
       if (this.config.enabledKeyStates.indexOf(payload.keyState) > -1) {
@@ -201,7 +202,7 @@ Module.register("MMM-KeyBindings", {
     }
   },
 
-  notificationReceived: function (notification, payload, sender) {
+  notificationReceived (notification, payload) {
     if (notification === "DOM_OBJECTS_CREATED") {
       if (this.config.enableKeyboard) {
         Log.log("Setting up Mousetrap keybindings.");
@@ -213,8 +214,8 @@ Module.register("MMM-KeyBindings", {
     }
   },
 
-  doAction: function (payload) {
-    let action = this.config.actions.filter((k) => k.key === payload.keyName);
+  doAction (payload) {
+    const action = this.config.actions.filter((k) => k.key === payload.keyName);
     if (action) {
       action.forEach((a) => {
         if (a.state && a.state !== payload.keyState) {

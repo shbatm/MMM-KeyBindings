@@ -72,7 +72,7 @@ Bug Fixes:
 
 Changes:
 
-- Dbus monitoring for bluetooth device connection events in evdev_daemon.py. Internal evdev daemon r
+- D-Bus monitoring for bluetooth device connection events in evdev_daemon.py. Internal evdev daemon r
 - Python logging methods for more detailed troubleshooting.
   - Logging details can be adjusted in the `'pylogging.json'` file.
 - Additional error handling and automatic restarts of the daemon.
