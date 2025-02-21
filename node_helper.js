@@ -106,7 +106,7 @@ module.exports = NodeHelper.create({
 
 
     socketNotificationReceived: function (notification, payload) {
-		var self = this;
+        var self = this;
         if (notification === "ENABLE_EVDEV") {
             if (!this.evdevMonitorCreated) {
                 evdev = require('evdev');

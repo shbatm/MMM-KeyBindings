@@ -1,6 +1,6 @@
 #title           :99-btremote.rules
 #description     :UDEV Rules File for creating symlink to bluetooth remote
-#author		 :shbatm
+#author          :shbatm
 #date            :2018-12-03
 #version         :0.0.1
 #notes           :This file should be copied into /etc/udev/rules.d/ and then
