@@ -35,10 +35,9 @@ You can then configure other modules to handle the key presses and, if necessary
 ```shell
 cd ~/MagicMirror/modules
 git clone https://github.com/shbatm/MMM-KeyBindings
-cd MMM-KeyBindings
 ```
 
-_NOTE:_ If you are not planning to use this module with anything but a standard keyboard: Run `npm run simple-setup` to install the module without `udev` and the `evdev` daemon. Skip the rest of the steps in this section.
+_NOTE:_ If you are not planning to use this module with anything but a standard keyboard: Skip to step 4.
 
 For advanced control using something like the Amazon Fire TV Remote, continue with the following steps:
 
