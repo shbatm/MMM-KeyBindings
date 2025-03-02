@@ -55,11 +55,8 @@ Just enter the module's directory, pull the update and install the dependencies:
 ```bash
 cd ~/MagicMirror/modules/MMM-KeyBindings
 git pull
+npm install
 ```
-
-If you had chosen the simple setup, run `npm run simple-setup` again to install the module without `udev` and the `evdev` daemon.
-
-If you had chosen the advanced setup, run `npm install` again to install the dependencies.
 
 ## Configuration options
 
