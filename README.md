@@ -1,8 +1,8 @@
 # MMM-KeyBindings - Remote and Keyboard Control for MagicMirror²
 
-This is a module for the [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror/).
+**MMM-KeyBindings** is a module for the [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror/).
 
-The MMM-KeyBindings Module is a helper module that provides a method for controlling the MagicMirror² through a Bluetooth-connected Remote or through a keyboard by capturing button presses and keystrokes and either processing them or passing them on for use in other modules via notifications.
+It is a helper module that provides a method for controlling the MagicMirror² through a Bluetooth-connected Remote or through a keyboard by capturing button presses and keystrokes and either processing them or passing them on for use in other modules via notifications.
 
 The primary features are:
 
@@ -46,7 +46,7 @@ For advanced control using something like the Amazon Fire TV Remote, continue wi
    1. From a terminal run `cat /proc/bus/input/devices | grep "Name"` to get the Name to use
    2. From a terminal run `udevadm info -a -p $(udevadm info -q path -n /dev/input/event0) | grep ATTRS{name}`, assuming this is the only device connected. You may have to change `event0` to something else. Check `ls /dev/input/` to see which ones are currently connected.
 3. Edit the `99-btremote.rules` file in this module's directory to use the name you found.
-4. Run `cd ~/MagicMirror/modules/MMM-KeyBindings && npm install`.
+4. Run `cd ~/MagicMirror/modules/MMM-KeyBindings && npm ci --omit=dev`.
 
 ## Update
 
@@ -55,7 +55,7 @@ Just enter the module's directory, pull the update and install the dependencies:
 ```bash
 cd ~/MagicMirror/modules/MMM-KeyBindings
 git pull
-npm install
+npm ci --omit=dev
 ```
 
 ## Configuration options
@@ -195,6 +195,28 @@ This module was created as a stepping stone to allow other modules to be tweaked
 - The following only work with `evdev` / remote control on the main screen. When using `Mousetrap` for keyboard events, these pass like regular key presses or flat-out don't work:
   - `KEY_LONGPRESSED`
 
-## Code of Conduct
+## Contributing
+
+If you find any problems, bugs or have questions, please [open a GitHub issue](https://github.com/shbatm/MMM-KeyBindings/issues) in this repository.
+
+Pull requests are of course also very welcome 🙂
+
+### Code of Conduct
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+
+### Developer commands
+
+- `npm install` - Install development dependencies.
+- `npm run lint` - Run linting and formatter checks.
+- `npm run lint:fix` - Fix linting and formatter issues.
+- `npm run test` - Run linting and formatter checks + Run spelling check.
+- `npm run test:spelling` - Run spelling check.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
+
+## Changelog
+
+All notable changes to this project will be documented in the [CHANGELOG.md](CHANGELOG.md) file.
