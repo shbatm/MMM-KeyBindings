@@ -28,7 +28,7 @@
     "test:spelling": "cspell ."
   },
   "dependencies": {
-    "@electron/rebuild": "^3.7.2",
+    "@electron/rebuild": "^4.0.1",
     "evdev": "^0.3.0",
     "mousetrap": "^1.6.5",
     "mousetrap-global-bind": "^1.1.0",
