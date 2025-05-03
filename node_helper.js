@@ -16,17 +16,17 @@ class EvDevHandler {
     Log.log(`EVDEV: Closing monitor and reader of ${this.evdevPath}`);
     try {
       this.udevMonitor.close();
-    } catch (e) {
+    } catch (error) {
       if (
-        e.toString().indexOf("Cannot read property 'close' of undefined") === -1
+        error.toString().indexOf("Cannot read property 'close' of undefined") === -1
       ) {
-        Log.error(e);
+        Log.error(error);
       }
     }
     try {
       this.evdevReader.close();
-    } catch (e) {
-      Log.error(e);
+    } catch (error) {
+      Log.error(error);
     }
   }
 
@@ -60,12 +60,12 @@ class EvDevHandler {
           this.pendingKeyPress = {};
         }
       })
-      .on("error", (e) => {
-        if (e.code === "ENODEV" || e.code === "ENOENT") {
-          Log.info(`EVDEV: Device not connected, nothing at path ${e.path}, waiting for device…`);
+      .on("error", (error) => {
+        if (error.code === "ENODEV" || error.code === "ENOENT") {
+          Log.info(`EVDEV: Device not connected, nothing at path ${error.path}, waiting for device…`);
           this.waitForDevice();
         } else {
-          Log.error("EVDEV: ", e);
+          Log.error("EVDEV: ", error);
         }
       });
 
@@ -104,8 +104,8 @@ module.exports = NodeHelper.create({
 
   stop () {
     if (this.evdevMonitorCreated) {
-      this.handlers.forEach((h) => {
-        h.close();
+      this.handlers.forEach((handler) => {
+        handler.close();
       });
     }
   },
@@ -117,14 +117,14 @@ module.exports = NodeHelper.create({
         evdev = require("evdev");
         udev = require("udev");
         const paths = payload.eventPath.split(",");
-        this.handlers = paths.map((p) => new EvDevHandler(p, udev, (name, state) => {
+        this.handlers = paths.map((path) => new EvDevHandler(path, udev, (name, state) => {
           self.sendSocketNotification("KEYPRESS", {
             keyName: name,
             keyState: state
           });
         }));
-        this.handlers.forEach((h) => {
-          h.startMonitor();
+        this.handlers.forEach((handler) => {
+          handler.startMonitor();
         });
         this.evdevMonitorCreated = true;
       }
