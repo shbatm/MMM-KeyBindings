@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.8](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.7...v1.3.8) Maintenance update - 2025-05-03
+
+### Changed
+
+- chore: update dependencies
+- chore: refactor ESLint config to use `defineConfig` and add plugins for json and markdown
+- refactor: improve variable naming
+
+### Fixed
+
+- chore: fix linter workflow
+
 ## [1.3.7](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.5...v1.3.6) Maintenance update - 2025-04-22
 
 ### Added
