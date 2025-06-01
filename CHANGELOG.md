@@ -101,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow for multiple actions to be assigned to the same key, for example, different actions for "KEY_PRESSED" and "KEY_LONGPRESSED".
 
-## [1.3.0](https://github.com/shbatm/MMM-KeyBindings/compare/v1.2.0...v1.3.0) [BREAKING CHANGES] Remove server controls in favor of external modules - 2019-01-03
+## [1.3.0](https://github.com/shbatm/MMM-KeyBindings/compare/v1.2.0...v1.3.0) _BREAKING CHANGES_ - Remove server controls in favor of external modules - 2019-01-03
 
 - Overall goal of simplifying this module.
 - Removed all server-side controls from this module (monitor toggle, external interrupts) in favor of declaring actions and sending notifications to other modules instead.
