@@ -24,8 +24,15 @@
     "lint:fix": "eslint --fix && prettier . --write",
     "postinstall": "./postinstall.sh",
     "preinstall": "./preinstall.sh",
+    "prepare": "[ -f node_modules/.bin/husky ] && husky || echo husky is not installed.",
     "test": "npm run lint && npm run test:spelling",
     "test:spelling": "cspell ."
+  },
+  "lint-staged": {
+    "*": [
+      "eslint --fix",
+      "prettier --write --ignore-unknown"
+    ]
   },
   "dependencies": {
     "@electron/rebuild": "^4.0.1",
@@ -43,6 +50,7 @@
     "eslint": "^9.28.0",
     "eslint-plugin-import-x": "^4.15.0",
     "globals": "^16.2.0",
+    "lint-staged": "^16.1.0",
     "prettier": "^3.5.3"
   }
 }
