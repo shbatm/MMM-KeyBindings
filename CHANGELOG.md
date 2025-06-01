@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.9](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.8...v1.3.9) Maintenance update - 2025-06-01
+
+### Changed
+
+- chore: enable linting rule `markdown/no-missing-label-refs` and handle issues
+- chore: remove `markdownlint` - we already lint markdown with ESLint
+- chore: setup `husky` and `lint-staged` to lint staged files
+- chore: update devDependencies
+
 ## [1.3.8](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.7...v1.3.8) Maintenance update - 2025-05-03
 
 ### Changed
