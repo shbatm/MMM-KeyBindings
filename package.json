@@ -25,7 +25,7 @@
     "postinstall": "./postinstall.sh",
     "preinstall": "./preinstall.sh",
     "prepare": "[ -f node_modules/.bin/husky ] && husky || echo husky is not installed.",
-    "test": "npm run lint && npm run test:spelling",
+    "test": "node --run lint && node --run test:spelling",
     "test:spelling": "cspell ."
   },
   "lint-staged": {
