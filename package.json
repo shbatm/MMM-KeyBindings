@@ -25,7 +25,7 @@
     "lint:fix": "eslint --fix && prettier . --write",
     "postinstall": "./postinstall.sh",
     "preinstall": "./preinstall.sh",
-    "prepare": "[ -f node_modules/.bin/husky ] && husky || echo husky is not installed.",
+    "prepare": "[ -f node_modules/.bin/husky ] && husky || true",
     "test": "node --run lint && node --run test:spelling",
     "test:spelling": "cspell ."
   },
