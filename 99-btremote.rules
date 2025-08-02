@@ -1,10 +1,37 @@
 #title           :99-btremote.rules
 #description     :UDEV Rules File for creating symlink to bluetooth remote
-#author          :shbatm
-#date            :2018-12-03
-#version         :0.0.1
+#authors         :shbatm, Kristjan ESPERANTO
+#date            :2025-08-02
+#version         :0.0.2
 #notes           :This file should be copied into /etc/udev/rules.d/ and then
                   run `udevadm trigger` to process and create shortcut.
-                  This will create a symbolic device at `/dev/input/btremote`.
+                  This will create symbolic devices.
 #==============================================================================
+#
+# CONFIGURATION GUIDE:
+# After installing this udev rule set, configure your MMM-KeyBindings module:
+#
+# OPTION 1: Single interface remote (default)
+# Use the default eventPath setting:
+#   eventPath: "/dev/input/btremote"
+#
+# OPTION 2: Multi-interface remote (recommended for full functionality)
+# Use all three interfaces:
+#   eventPath: "/dev/input/btremote-keyboard,/dev/input/btremote-media,/dev/input/btremote-mouse"
+#
+#==============================================================================
+
+# CASE 1: Single interface remote (older firmware or simpler remotes)
 SUBSYSTEM=="input", ATTRS{name}=="Amazon Fire TV Remote", ENV{DEVNAME}=="*event*", SYMLINK+="input/btremote"
+
+# CASE 2: Multi-interface remote (modern Fire TV remotes)
+# These create three separate input devices for different functionalities:
+
+## Keyboard interface - Navigation keys (up, down, left, right, select, back, home)
+SUBSYSTEM=="input", ATTRS{name}=="Amazon Fire TV Remote Keyboard", ENV{DEVNAME}=="*event*", SYMLINK+="input/btremote-keyboard"
+
+## Consumer Control interface - Media keys (play/pause, volume up/down, mute)
+SUBSYSTEM=="input", ATTRS{name}=="Amazon Fire TV Remote Consumer Control", ENV{DEVNAME}=="*event*", SYMLINK+="input/btremote-media"
+
+## Mouse interface - Touchpad/cursor movement and click events
+SUBSYSTEM=="input", ATTRS{name}=="Amazon Fire TV Remote Mouse", ENV{DEVNAME}=="*event*", SYMLINK+="input/btremote-mouse"
