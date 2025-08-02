@@ -23,6 +23,7 @@
     "PLAYPAUSE",
     "previoustrack",
     "pylogging",
+    "reconnections",
     "shbatm",
     "SUBCLASSABLE",
     "udevadm"
