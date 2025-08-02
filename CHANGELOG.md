@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.12](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.11...v1.3.12) Maintenance update - 2025-08-02
+
+### Added
+
+- feat: add more symbolic links for remotes with more than one interface
+
+### Changed
+
+- chore: add husky as a devDependency
+- chore: add "reconnections" to cspell words
+- chore: update devDependencies
+- chore: update prepare script to handle missing `husky` gracefully
+- refactor: add module prefix to log messages
+- refactor: replace unmaintained dependency `udev` with `usb`
+
 ## [1.3.11](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.10...v1.3.11) Maintenance update - 2025-07-12
 
 ### Changed
