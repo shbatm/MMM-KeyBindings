@@ -2,29 +2,37 @@ const NodeHelper = require("node_helper");
 const Log = require("logger");
 
 let evdev;
-let udev;
+let usb;
 
 class EvDevHandler {
-  constructor (path, uDev, onKeyPress) {
+  constructor (path, usbModule, onKeyPress) {
     this.evdevPath = path;
-    this.udev = uDev;
+    this.usb = usbModule;
     this.onKey = onKeyPress;
+    this.isMonitoring = false;
     Log.log(`Create EvDevHandler for ${path}`);
   }
 
   close () {
     Log.log(`EVDEV: Closing monitor and reader of ${this.evdevPath}`);
+
+    // Clear reconnect interval if it exists
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
+
     try {
-      this.udevMonitor.close();
-    } catch (error) {
-      if (
-        error.toString().indexOf("Cannot read property 'close' of undefined") === -1
-      ) {
-        Log.error(error);
+      if (this.isMonitoring) {
+        this.isMonitoring = false;
       }
+    } catch (error) {
+      Log.error(error);
     }
     try {
-      this.evdevReader.close();
+      if (this.evdevReader) {
+        this.evdevReader.close();
+      }
     } catch (error) {
       Log.error(error);
     }
@@ -84,14 +92,25 @@ class EvDevHandler {
   }
 
   waitForDevice () {
-    this.udevMonitor = this.udev.monitor();
-    this.udevMonitor.on("add", (device) => {
-      if ("DEVLINKS" in device && device.DEVLINKS === this.evdevPath) {
-        Log.log("UDEV: Device connected.");
-        this.udevMonitor.close();
-        this.setupDevice();
-      }
-    });
+    if (!this.isMonitoring) {
+      this.isMonitoring = true;
+
+      /*
+       * Simple polling mechanism for device reconnection
+       * (usb module doesn't support attach events like udev did)
+       */
+      this.reconnectInterval = setInterval(() => {
+        Log.log("Checking for device reconnection...");
+        try {
+          this.setupDevice();
+        } catch {
+          // Device still not available, continue polling
+          Log.debug("Device not yet available, continuing to poll...");
+        }
+      }, 5000); // Check every 5 seconds
+
+      Log.log("Monitoring for device reconnections...");
+    }
   }
 }
 
@@ -115,9 +134,9 @@ module.exports = NodeHelper.create({
     if (notification === "ENABLE_EVDEV") {
       if (!this.evdevMonitorCreated) {
         evdev = require("evdev");
-        udev = require("udev");
+        usb = require("usb");
         const paths = payload.eventPath.split(",");
-        this.handlers = paths.map((path) => new EvDevHandler(path, udev, (name, state) => {
+        this.handlers = paths.map((path) => new EvDevHandler(path, usb, (name, state) => {
           self.sendSocketNotification("KEYPRESS", {
             keyName: name,
             keyState: state

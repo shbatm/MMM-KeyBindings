@@ -40,7 +40,7 @@
     "evdev": "^0.3.0",
     "mousetrap": "^1.6.5",
     "mousetrap-global-bind": "^1.1.0",
-    "udev": "^1.0.1"
+    "usb": "^2.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
