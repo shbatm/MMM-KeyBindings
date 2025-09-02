@@ -4,8 +4,8 @@ const global = this;
 
 Module.register("MMM-KeyBindings", {
   defaults: {
-    enabledKeyStates: ["KEY_PRESSED", "KEY_LONGPRESSED"], // Other options are 'KEY_UP', 'KEY_DOWN',
-    // 'KEY_HOLD' but evdev.raw_mode must be true to receive
+    enabledKeyStates: ["KEY_PRESSED", "KEY_LONGPRESSED"],
+    // Other options are 'KEY_UP', 'KEY_DOWN', 'KEY_HOLD' but evdev.raw_mode must be true to receive
     handleKeys: [], // List of additional keys to handle in this module; blank == standard set
     disableKeys: [], // list of keys to ignore from the default set.
     enableKeyboard: false,
