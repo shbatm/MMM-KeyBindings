@@ -2,8 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.13...v2.0.0) - 2025-12-12
+
+With this major update, MMM-KeyBindings has been refactored to remove all dependencies on Mousetrap and native evdev modules. The module now uses pure JavaScript implementations for both keyboard event handling and evdev reading, simplifying installation and improving maintainability.
+
+**BREAKING CHANGE**: handleKeys now expects KeyboardEvent.key names (e.g. 'ArrowLeft', 'Home') instead of Mousetrap format ('left', 'home')
+
+### Changed
+
+- refactor: replace Mousetrap with native keyboard handler
+  - Remove mousetrap and mousetrap-global-bind dependencies
+  - Add nativeKeyHandler.js using native KeyboardEvent API
+  - Skip key handling when focus is in form fields
+  - Rename preinstall.sh to setup-udev.sh (no npm install needed)
+  - Update README: zero runtime deps, KeyboardEvent.key names
+  - Clean up Known Issues section (remove Mousetrap references)
+
+- refactor: replace native evdev with pure JS implementation
+  - Remove node-gyp dependencies (evdev, usb, @electron/rebuild)
+  - Add native JavaScript evdev reader using fs module
+  - Add keycodes.js with Linux input event codes
+  - Add error logging for missing config and permissions
+  - Update docs: input group requirement, enableKeyboard note
+  - Simplify installation (no build tools needed)
+
+- refactor: modernize keybindings instance logic and actions
+- refactor(keyHandler): modernize and make ESLint-compliant
+
+### Chore
+
+- chore: remove requiresVersion to reduce noise
+- chore: replace husky with simple-git-hooks for pre-commit linting
+- chore: update actions/checkout to version 6 in automated tests workflow
+- chore: update Node.js setup action to version 6 in automated tests workflow
+- chore: update dependencies
 
 ## [1.3.13](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.12...v1.3.13) Maintenance update - 2025-09-02
 
