@@ -1,4 +1,3 @@
-/* eslint-disable consistent-return, func-names, no-unused-vars, no-console, no-empty-function */
 /* global cloneObject, Class */
 
 /**
@@ -73,9 +72,11 @@ const KeyHandler = Class.extend({
     debug: false
   },
 
-  /*
+  /**
    * init()
    * Is called when the module is instantiated.
+   * @param {string} name - Module name
+   * @param {object} config - Module configuration
    */
   init (name, config) {
     this.name = name;
@@ -97,7 +98,7 @@ const KeyHandler = Class.extend({
   },
 
   /**
-   ** validate ***
+   * validate
    *
    *   Add function below to your moduleName.js
    *   Add `if (this.validate(notification, payload)) { return; }`
@@ -108,6 +109,9 @@ const KeyHandler = Class.extend({
    *          if (this.validate(notification, payload)) { return; }
    *      },
    *
+   * @param {string} notification - Notification name
+   * @param {object} payload - Notification payload
+   * @returns {boolean} - Whether the notification was handled
    */
   validate (notification, payload) {
     // Handle KEYPRESS mode change events from the MMM-KeyBindings Module
@@ -118,7 +122,7 @@ const KeyHandler = Class.extend({
 
     // Uncomment line below for diagnostics & to confirm keypresses are being received
     if (notification === "KEYPRESS" && this.debug) {
-      console.log(payload);
+      Log.debug("[KeyHandler]", payload);
     }
 
     // Validate Keypresses
@@ -163,21 +167,21 @@ const KeyHandler = Class.extend({
   },
 
   /**
-   ** focusReceived ***
+   * focusReceived
    *
    *   Function is called when a valid take focus key press
    *      has been received and is ready for action
    *
    */
   focusReceived () {
-    console.log(`${this.name} HAS FOCUS!`);
+    Log.info(`${this.name} HAS FOCUS!`);
     this.sendNotification("KEYPRESS_MODE_CHANGED", this.config.mode);
     this.currentMode = this.config.mode;
     this.onFocus();
   },
 
   /**
-   ** releaseFocus ***
+   * releaseFocus
    *
    *   Call this function when ready to release focus
    *
@@ -186,7 +190,7 @@ const KeyHandler = Class.extend({
    *
    */
   releaseFocus () {
-    console.log(`${this.name} HAS RELEASED FOCUS!`);
+    Log.info(`${this.name} HAS RELEASED FOCUS!`);
     this.sendNotification("KEYPRESS_MODE_CHANGED", "DEFAULT");
     this.currentMode = "DEFAULT";
     this.onFocusReleased();
@@ -196,7 +200,7 @@ const KeyHandler = Class.extend({
   /** * Pass your functions in the KeyHandler definition ***/
 
   /**
-   ** validKeyPress ***
+   * validKeyPress
    *
    *   Add function below to your moduleName.js
    *   Function is called when a valid key press for your module
@@ -204,44 +208,62 @@ const KeyHandler = Class.extend({
    *   Modify this function to do what you need in your module
    *      whenever a valid key is pressed.
    *
+   * @param {object} kp - Key press payload
    */
   validKeyPress (kp) {
-    console.log(kp.keyName);
+    Log.debug("[KeyHandler] Key pressed:", kp.keyName);
 
     // Example for responding to "Left" and "Right" arrow
     if (kp.keyName === this.config.map.Right) {
-      console.log("RIGHT KEY WAS PRESSED!");
+      Log.debug("[KeyHandler] RIGHT KEY WAS PRESSED!");
     } else if (kp.keyName === this.config.map.Left) {
-      console.log("LEFT KEY WAS PRESSED!");
+      Log.debug("[KeyHandler] LEFT KEY WAS PRESSED!");
     }
   },
-  /*
+
+  /**
+   * onFocus
    * Subclass this method in your KeyHandler definition to do something
    * when focus has been received.
    *   Modify this function to do what you need in your module
    *      whenever focus is received.
    */
-  onFocus (kp) {},
-  /*
+  onFocus () {
+    // Override in subclass
+  },
+
+  /**
+   * onFocusReleased
    * Subclass this method in your KeyHandler definition to do something
-   * when focus has been received.
+   * when focus has been released.
    *   Modify this function to do what you need in your module
    *      whenever focus is released.
    */
-  onFocusReleased (kp) {},
+  onFocusReleased () {
+    // Override in subclass
+  },
 
-  /*
-   *  Subclassed to provide reference to module's send function.
+  /**
+   * sendNotification
+   * Subclassed to provide reference to module's send function.
    */
-  sendNotification (notification, payload) {}
+  sendNotification () {
+    // Override in subclass
+  }
 });
 
 KeyHandler.definitions = {};
 
-KeyHandler.create = function (name, config) {
+/**
+ * Create a new KeyHandler instance
+ * @param {string} name - Handler name
+ * @param {object} config - Handler configuration
+ * @returns {KeyHandler|undefined} - New KeyHandler instance or undefined
+ */
+KeyHandler.create = function create (name, config) {
   // Make sure module definition is available.
   if (!KeyHandler.definitions[name]) {
-    return;
+    return undefined;
   }
 
   const handlerDefinition = KeyHandler.definitions[name];
@@ -253,6 +275,11 @@ KeyHandler.create = function (name, config) {
   return new KeyHandlerClass(name, config);
 };
 
-KeyHandler.register = function (name, handlerDefinition) {
+/**
+ * Register a KeyHandler definition
+ * @param {string} name - Handler name
+ * @param {object} handlerDefinition - Handler definition object
+ */
+KeyHandler.register = function register (name, handlerDefinition) {
   KeyHandler.definitions[name] = handlerDefinition;
 };
