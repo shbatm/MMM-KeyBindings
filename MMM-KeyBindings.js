@@ -1,6 +1,12 @@
 /* global NativeKeyHandler */
 
-const global = this;
+const LOCAL_HOSTS = [
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "::ffff:127.0.0.1",
+  "0.0.0.0"
+];
 
 Module.register("MMM-KeyBindings", {
   defaults: {
@@ -45,15 +51,7 @@ Module.register("MMM-KeyBindings", {
 
   // Allow for control on multiple instances
   instance:
-    global.location &&
-    [
-      "localhost",
-      "127.0.0.1",
-      "::1",
-      "::ffff:127.0.0.1",
-      undefined,
-      "0.0.0.0"
-    ].indexOf(global.location.hostname) > -1
+    typeof window !== "undefined" && LOCAL_HOSTS.includes(window.location.hostname)
       ? "SERVER"
       : "LOCAL",
 
@@ -107,12 +105,7 @@ Module.register("MMM-KeyBindings", {
     keys = keys.concat(this.config.handleKeys);
 
     // Remove disabled keys
-    for (const disabledKey of this.config.disableKeys) {
-      const idx = keys.indexOf(disabledKey);
-      if (idx > -1) {
-        keys.splice(idx, 1);
-      }
-    }
+    keys = keys.filter((k) => !this.config.disableKeys.includes(k));
 
     Log.debug(`[MMM-KeyBindings] Keyboard handler listening for: ${keys.join(", ")}`);
 
@@ -155,7 +148,7 @@ Module.register("MMM-KeyBindings", {
   socketNotificationReceived (notification, payload) {
     // Log.log("Working notification system. Notification:", notification, "payload: ", payload);
     if (notification === "KEYPRESS") {
-      if (this.config.enabledKeyStates.indexOf(payload.keyState) > -1) {
+      if (this.config.enabledKeyStates.includes(payload.keyState)) {
         this.handleEvDevKeyPressEvents(payload);
       }
     }
@@ -174,26 +167,23 @@ Module.register("MMM-KeyBindings", {
   },
 
   doAction (payload) {
-    const action = this.config.actions.filter((k) => k.key === payload.keyName);
-    if (action) {
-      action.forEach((a) => {
-        if (a.state && a.state !== payload.keyState) {
-          return;
-        }
-        if (a.instance && a.instance !== payload.sender) {
-          return;
-        }
-        if (a.mode && a.mode !== payload.currentMode) {
-          return;
-        }
+    const actions = this.config.actions || [];
+    for (const a of actions) {
+      const matchesKey = a.key === payload.keyName;
+      const matchesState = !a.state || a.state === payload.keyState;
+      const matchesInstance = !a.instance || a.instance === payload.sender;
+      const matchesMode = !a.mode || a.mode === payload.currentMode;
 
-        if ("changeMode" in a) {
-          this.currentKeyPressMode = a.changeMode;
-          this.sendNotification("KEYPRESS_MODE_CHANGED", a.changeMode);
-        } else {
-          this.sendNotification(a.notification, a.payload);
-        }
-      });
+      if (!matchesKey || !matchesState || !matchesInstance || !matchesMode) {
+        continue; // eslint-disable-line no-continue -- early skip keeps nesting shallow
+      }
+
+      if ("changeMode" in a) {
+        this.currentKeyPressMode = a.changeMode;
+        this.sendNotification("KEYPRESS_MODE_CHANGED", a.changeMode);
+      } else {
+        this.sendNotification(a.notification, a.payload);
+      }
     }
   }
 });
