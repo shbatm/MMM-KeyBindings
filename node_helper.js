@@ -1,116 +1,209 @@
 const NodeHelper = require("node_helper");
 const Log = require("logger");
+const fs = require("node:fs");
+const KEY_CODES = require("./keycodes.js");
 
-let evdev;
-let usb;
+/**
+ * Linux input event types
+ * @see https://www.kernel.org/doc/html/latest/input/event-codes.html
+ */
+const EV_KEY = 0x01;
 
-class EvDevHandler {
-  constructor (path, usbModule, onKeyPress) {
-    this.evdevPath = path;
-    this.usb = usbModule;
+/**
+ * Size of input_event struct depends on architecture.
+ * 64-bit: 24 bytes (8+8+2+2+4)
+ * 32-bit: 16 bytes (4+4+2+2+4)
+ */
+const EVENT_SIZE = process.arch === "arm"
+  ? 16
+  : 24;
+const TIME_SIZE = process.arch === "arm"
+  ? 8
+  : 16;
+
+/**
+ * Pure JavaScript implementation of Linux evdev input reader.
+ * Reads directly from /dev/input/event* devices without native dependencies.
+ */
+class InputEventReader {
+  /**
+   * @param {string} devicePath - Path to the input device (e.g., /dev/input/btremote)
+   * @param {Function} onKeyPress - Callback for key events: (keyName, keyState)
+   */
+  constructor (devicePath, onKeyPress) {
+    this.devicePath = devicePath;
     this.onKey = onKeyPress;
-    this.isMonitoring = false;
-    Log.log(`[MMM-KeyBindings] Create EvDevHandler for ${path}`);
+    this.fd = null;
+    this.isRunning = false;
+    this.reconnectInterval = null;
+    this.pendingKeyPress = {};
+
+    Log.log(`[MMM-KeyBindings] Create InputEventReader for ${devicePath}`);
   }
 
-  close () {
-    Log.log(`[MMM-KeyBindings] EVDEV: Closing monitor and reader of ${this.evdevPath}`);
+  /**
+   * Start reading from the input device
+   */
+  start () {
+    this.isRunning = true;
+    this.openDevice();
+  }
 
-    // Clear reconnect interval if it exists
+  /**
+   * Open the device and start reading events
+   */
+  openDevice () {
+    // Clear any existing reconnect interval
     if (this.reconnectInterval) {
       clearInterval(this.reconnectInterval);
       this.reconnectInterval = null;
     }
 
-    try {
-      if (this.isMonitoring) {
-        this.isMonitoring = false;
-      }
-    } catch (error) {
-      Log.error(`[MMM-KeyBindings] ${error}`);
-    }
-    try {
-      if (this.evdevReader) {
-        this.evdevReader.close();
-      }
-    } catch (error) {
-      Log.error(`[MMM-KeyBindings] ${error}`);
-    }
-  }
-
-  startMonitor () {
-    this.evdevReader = new evdev();
-    this.pendingKeyPress = {};
-
-    this.evdevReader
-      .on("EV_KEY", (data) => {
-        Log.debug("[MMM-KeyBindings] key : ", data.code, data.value);
-        if (data.value > 0) {
-          this.pendingKeyPress.code = data.code;
-          this.pendingKeyPress.value = data.value;
-        } else {
-          if (
-            "code" in this.pendingKeyPress &&
-            this.pendingKeyPress.code === data.code
-          ) {
-            Log.log(`[MMM-KeyBindings] ${this.pendingKeyPress.code} ${
-              this.pendingKeyPress.value === 2
-                ? "long "
-                : ""
-            }pressed.`);
-            this.onKey(
-              data.code,
-              this.pendingKeyPress.value === 2
-                ? "KEY_LONGPRESSED"
-                : "KEY_PRESSED"
-            );
-          }
-          this.pendingKeyPress = {};
+    fs.open(this.devicePath, "r", (err, fd) => {
+      if (err) {
+        if (err.code === "EACCES") {
+          Log.error(`[MMM-KeyBindings] Permission denied for ${this.devicePath}`);
+          Log.error("[MMM-KeyBindings] Make sure your user is in the 'input' group: sudo usermod -aG input $USER (then logout/login)");
+          this.waitForDevice();
+          return;
         }
-      })
-      .on("error", (error) => {
-        if (error.code === "ENODEV" || error.code === "ENOENT") {
-          Log.info(`[MMM-KeyBindings] EVDEV: Device not connected, nothing at path ${error.path}, waiting for device…`);
+        if (err.code === "ENOENT" || err.code === "ENODEV") {
+          Log.info(`[MMM-KeyBindings] Device not available at ${this.devicePath}: ${err.code}, waiting for device…`);
           this.waitForDevice();
         } else {
-          Log.error(`[MMM-KeyBindings] EVDEV: ${error}`);
+          Log.error(`[MMM-KeyBindings] Error opening device: ${err}`);
+        }
+        return;
+      }
+
+      this.fd = fd;
+      Log.log(`[MMM-KeyBindings] Connected to input device: ${this.devicePath}`);
+
+      // Start reading events
+      this.readEvents();
+    });
+  }
+
+  /**
+   * Read events from the device in a loop
+   */
+  readEvents () {
+    if (!this.isRunning || this.fd === null) {
+      return;
+    }
+
+    const buffer = Buffer.alloc(EVENT_SIZE);
+
+    fs.read(this.fd, buffer, 0, EVENT_SIZE, null, (err, bytesRead) => {
+      if (err) {
+        if (err.code === "ENODEV") {
+          Log.info("[MMM-KeyBindings] Device disconnected, waiting for reconnection…");
+          this.closeDevice();
+          this.waitForDevice();
+        } else {
+          Log.error(`[MMM-KeyBindings] Read error: ${err}`);
+        }
+        return;
+      }
+
+      if (bytesRead === EVENT_SIZE) {
+        this.parseEvent(buffer);
+      }
+
+      // Continue reading (async recursion)
+      setImmediate(() => this.readEvents());
+    });
+  }
+
+  /**
+   * Parse a single input event from the buffer
+   * @param {Buffer} buffer - The raw event data
+   */
+  parseEvent (buffer) {
+    // Skip time fields, read type, code, value
+    const type = buffer.readUInt16LE(TIME_SIZE);
+    const code = buffer.readUInt16LE(TIME_SIZE + 2);
+    const value = buffer.readInt32LE(TIME_SIZE + 4);
+
+    // Only process key events (EV_KEY)
+    if (type !== EV_KEY) {
+      return;
+    }
+
+    const keyName = KEY_CODES[code] || `KEY_${code}`;
+    Log.debug(`[MMM-KeyBindings] Key event: ${keyName} (code: ${code}, value: ${value})`);
+
+    // value: 0 = released, 1 = pressed, 2 = repeated (held/long press)
+    if (value > 0) {
+      // Key pressed or held
+      this.pendingKeyPress.code = code;
+      this.pendingKeyPress.keyName = keyName;
+      this.pendingKeyPress.value = value;
+    } else {
+      // Key released - determine if it was a short or long press
+      if (this.pendingKeyPress.code === code) {
+        const keyState = this.pendingKeyPress.value === 2
+          ? "KEY_LONGPRESSED"
+          : "KEY_PRESSED";
+        Log.log(`[MMM-KeyBindings] ${keyName} ${keyState === "KEY_LONGPRESSED"
+          ? "long "
+          : ""}pressed.`);
+        this.onKey(keyName, keyState);
+      }
+      this.pendingKeyPress = {};
+    }
+  }
+
+  /**
+   * Wait for the device to become available
+   */
+  waitForDevice () {
+    if (this.reconnectInterval) {
+      return;
+    }
+
+    this.reconnectInterval = setInterval(() => {
+      Log.debug("[MMM-KeyBindings] Checking for device reconnection...");
+
+      // Check if device exists
+      fs.access(this.devicePath, fs.constants.R_OK, (err) => {
+        if (!err && this.isRunning) {
+          Log.log("[MMM-KeyBindings] Device available, attempting to reconnect...");
+          this.openDevice();
         }
       });
+    }, 5000);
 
-    this.setupDevice();
+    Log.log("[MMM-KeyBindings] Monitoring for device reconnections...");
   }
 
-  setupDevice () {
-    this.device = this.evdevReader.open(this.evdevPath);
-    this.device.on("open", () => {
-      Log.log(`[MMM-KeyBindings] EVDEV: Connected to device: ${JSON.stringify(this.device.id)}`);
-    });
-    this.device.on("close", () => {
-      Log.debug("[MMM-KeyBindings] EVDEV: Connection to device has been closed.");
-      this.waitForDevice();
-    });
-  }
-
-  waitForDevice () {
-    if (!this.isMonitoring) {
-      this.isMonitoring = true;
-
-      /*
-       * Simple polling mechanism for device reconnection
-       * (usb module doesn't support attach events like udev did)
-       */
-      this.reconnectInterval = setInterval(() => {
-        Log.log("[MMM-KeyBindings] Checking for device reconnection...");
-        try {
-          this.setupDevice();
-        } catch {
-          // Device still not available, continue polling
-          Log.debug("[MMM-KeyBindings] Device not yet available, continuing to poll...");
+  /**
+   * Close the device file descriptor
+   */
+  closeDevice () {
+    if (this.fd !== null) {
+      fs.close(this.fd, (err) => {
+        if (err) {
+          Log.debug(`[MMM-KeyBindings] Error closing fd: ${err.message}`);
         }
-      }, 5000); // Check every 5 seconds
-
-      Log.log("[MMM-KeyBindings] Monitoring for device reconnections...");
+      });
+      this.fd = null;
     }
+  }
+
+  /**
+   * Stop reading and close the device
+   */
+  close () {
+    Log.log(`[MMM-KeyBindings] Closing reader for ${this.devicePath}`);
+    this.isRunning = false;
+
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
+
+    this.closeDevice();
   }
 }
 
@@ -118,33 +211,42 @@ module.exports = NodeHelper.create({
   start () {
     Log.log("MMM-KeyBindings helper has started…");
     this.evdevMonitorCreated = false;
-    this.handlers = [];
+    this.readers = [];
   },
 
   stop () {
     if (this.evdevMonitorCreated) {
-      this.handlers.forEach((handler) => {
-        handler.close();
+      this.readers.forEach((reader) => {
+        reader.close();
       });
     }
   },
 
   socketNotificationReceived (notification, payload) {
-    const self = this;
     if (notification === "ENABLE_EVDEV") {
       if (!this.evdevMonitorCreated) {
-        evdev = require("evdev");
-        usb = require("usb");
-        const paths = payload.eventPath.split(",");
-        this.handlers = paths.map((path) => new EvDevHandler(path, usb, (name, state) => {
-          self.sendSocketNotification("KEYPRESS", {
-            keyName: name,
-            keyState: state
+        if (!payload.eventPath) {
+          Log.error("MMM-KeyBindings: evdev is enabled but 'eventPath' is not configured!");
+          Log.error("MMM-KeyBindings: Please add eventPath to your config, e.g.: evdev: { enabled: true, eventPath: '/dev/input/btremote' }");
+          return;
+        }
+
+        const paths = payload.eventPath.split(",").map((p) => p.trim());
+
+        this.readers = paths.map((devicePath) => {
+          const reader = new InputEventReader(devicePath, (keyName, keyState) => {
+            this.sendSocketNotification("KEYPRESS", {
+              keyName,
+              keyState
+            });
           });
-        }));
-        this.handlers.forEach((handler) => {
-          handler.startMonitor();
+          return reader;
         });
+
+        this.readers.forEach((reader) => {
+          reader.start();
+        });
+
         this.evdevMonitorCreated = true;
       }
     }
