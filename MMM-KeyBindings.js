@@ -57,8 +57,6 @@ Module.register("MMM-KeyBindings", {
       ? "SERVER"
       : "LOCAL",
 
-  requiresVersion: "2.3.0", // Required version of MagicMirror
-
   start () {
     Log.info(`${this.name} has started…`);
 
