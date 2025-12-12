@@ -1,4 +1,4 @@
-/* global Mousetrap */
+/* global NativeKeyHandler */
 
 const global = this;
 
@@ -85,91 +85,52 @@ Module.register("MMM-KeyBindings", {
   getScripts () {
     return [
       "keyHandler.js",
-      this.file("node_modules/mousetrap/mousetrap.min.js"),
-      this.file("node_modules/mousetrap-global-bind/mousetrap-global-bind.min.js")
+      "nativeKeyHandler.js"
     ];
   },
 
-  setupMousetrap () {
+  setupKeyboardHandler () {
     const self = this;
     let keys = [
-      "home",
-      "enter",
-      "left",
-      "right",
-      "up",
-      "down",
-      "return",
-      "playpause",
-      "nexttrack",
-      "previoustrack",
+      "Home",
+      "Enter",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "Return",
+      "MediaPlayPause",
+      "MediaNextTrack",
+      "MediaPreviousTrack",
       "Menu"
     ];
-    const keyCodes = {
-      179: "playpause",
-      178: "nexttrack",
-      177: "previoustrack",
-      93: "Menu"
-    };
-    const keyMap = {ContextMenu: "Menu"};
 
-    Mousetrap.addKeycodes(keyCodes);
-
-    /*
-     * Add extra keys (must be in Mousetrap form)
-     * TODO: Add ability to add extra keycodes as well
-     */
+    // Add extra keys from config
     keys = keys.concat(this.config.handleKeys);
 
-    // Remove Disabled Keys
-    for (let i = this.config.disableKeys.length - 1; i >= 0; i--) {
-      const j = keys.indexOf(this.config.disableKeys[i]);
-      if (j > -1) {
-        keys.splice(j, 1);
+    // Remove disabled keys
+    for (const disabledKey of this.config.disableKeys) {
+      const idx = keys.indexOf(disabledKey);
+      if (idx > -1) {
+        keys.splice(idx, 1);
       }
     }
 
-    Log.debug(keys);
+    Log.debug(`[MMM-KeyBindings] Keyboard handler listening for: ${keys.join(", ")}`);
 
-    Mousetrap.bindGlobal(keys, (e) => {
-      // Prevent the default action from occuring
-      if (e.preventDefault) {
-        e.preventDefault();
-      } else {
-        // internet explorer
-        e.returnValue = false;
-      }
+    NativeKeyHandler.init(keys, (keyName) => {
+      const payload = {
+        keyName,
+        keyState: "KEY_PRESSED",
+        currentMode: self.currentKeyPressMode,
+        sender: self.instance,
+        instance: self.instance,
+        protocol: "keyboard"
+      };
 
-      const payload = {};
-      payload.keyName = e.key;
-
-      // Standardize the name
-      if (payload.keyName in keyMap) {
-        payload.keyName = keyMap[payload.keyName];
-      }
-
-      if (this.config.evdev.rawMode) {
-        payload.keyState = e.type;
-      } else {
-        payload.keyState = "KEY_PRESSED";
-      }
-      payload.currentMode = self.currentKeyPressMode;
-      payload.sender = self.instance;
-      payload.instance = self.instance;
-      payload.protocol = "mousetrap";
       self.sendNotification("KEYPRESS", payload);
       self.doAction(payload);
     });
-
-    // Squash bad actors:
-    Mousetrap.bind(
-      ["home", "Menu"],
-      (e) => {
-        e.preventDefault();
-        return false;
-      },
-      "keyup"
-    );
   },
 
   handleEvDevKeyPressEvents (payload) {
@@ -205,8 +166,8 @@ Module.register("MMM-KeyBindings", {
   notificationReceived (notification, payload) {
     if (notification === "DOM_OBJECTS_CREATED") {
       if (this.config.enableKeyboard) {
-        Log.log("Setting up Mousetrap keybindings.");
-        this.setupMousetrap();
+        Log.log("[MMM-KeyBindings] Setting up keyboard handler.");
+        this.setupKeyboardHandler();
       }
     }
     if (notification === "KEYPRESS_MODE_CHANGED") {

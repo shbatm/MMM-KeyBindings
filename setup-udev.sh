@@ -1,10 +1,10 @@
 #!/bin/bash
-# Title         : preinstall.sh
+# Title         : setup-udev.sh
 # Description   : This script will create a udev symlink for a Bluetooth Remote
 # Author        : shbatm
 # Date          : 2025-12-12
-# Version       : 0.0.4
-# Usage         : ./preinstall.sh
+# Version       : 0.0.5
+# Usage         : ./setup-udev.sh
 # Notes         : This script assumes you are using an Amazon Fire TV Remote.
 #               : any bluetooth device can be used, but you must change the
 #               : name in the 99-btremote.rules file to match the device.

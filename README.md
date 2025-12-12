@@ -37,7 +37,9 @@ cd ~/MagicMirror/modules
 git clone https://github.com/shbatm/MMM-KeyBindings
 ```
 
-_NOTE:_ If you are not planning to use this module with anything but a standard keyboard: Skip to step 4.
+**That's it!** For standard keyboard usage, no `npm install` is required - the module has zero runtime dependencies.
+
+### Advanced Setup (evdev / Bluetooth Remote)
 
 For advanced control using something like the Amazon Fire TV Remote, continue with the following steps:
 
@@ -46,21 +48,25 @@ For advanced control using something like the Amazon Fire TV Remote, continue wi
    1. From a terminal run `cat /proc/bus/input/devices | grep "Name"` to get the Name to use
    2. From a terminal run `udevadm info -a -p $(udevadm info -q path -n /dev/input/event0) | grep ATTRS{name}`, assuming this is the only device connected. You may have to change `event0` to something else. Check `ls /dev/input/` to see which ones are currently connected.
 3. Edit the `99-btremote.rules` file in this module's directory to use the name you found.
-4. Add your user to the `input` group to allow reading input devices:
+4. Run the setup script to install the udev rules:
+   ```bash
+   cd ~/MagicMirror/modules/MMM-KeyBindings
+   ./setup-udev.sh
+   ```
+5. Add your user to the `input` group to allow reading input devices:
    ```bash
    sudo usermod -aG input $USER
    ```
    Then **logout and login again** (or reboot) for the change to take effect.
-5. Run `cd ~/MagicMirror/modules/MMM-KeyBindings && npm ci --omit=dev`.
+6. Configure `eventPath` in your module config (see Configuration options below).
 
 ## Update
 
-Just enter the module's directory, pull the update and install the dependencies:
+Just enter the module's directory and pull the update:
 
 ```bash
 cd ~/MagicMirror/modules/MMM-KeyBindings
 git pull
-npm ci --omit=dev
 ```
 
 ## Configuration options
@@ -71,7 +77,7 @@ npm ci --omit=dev
 | :----------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 |           `enableKeyboard`           | Whether or not to capture keys from a standard keyboard. <br>_Optional_ Default: `false` - keyboard is not enabled. Set to `true` to enable a standard keyboard. Make sure no other modules are using the keyboard (e.g. MMM-OnScreenMenu). <br>**Note:** When using a Bluetooth remote with `evdev`, keep this set to `false` to avoid duplicate key events (the remote registers as both an evdev device and a keyboard).                                                                                         |
 |          `enabledKeyStates`          | Array of Key States that the module should handle. <br />_Default:_ `KEY_PRESSED` & `KEY_LONGPRESSED`                                                                                                                                                                                                                                                                                                                                                                                                               |
-|             `handleKeys`             | Array of additional keys to handle in this module above the standard set, <br /> Reference [Mousetrap API](https://craig.is/killing/mice) for the available key enumerations.                                                                                                                                                                                                                                                                                                                                       |
+|             `handleKeys`             | Array of additional keys (strings) to handle in this module above the standard set. Use `KeyboardEvent.key` names such as `ArrowLeft`, `Home`, `Enter`, `k`.                                                                                                                                                                                                                                                                                                                                                        |
 |            `disableKeys`             | Array of keys to ignore from the default set.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 |               `evdev`                | Configuration options for the `evdev` daemon. <br />See below for details.<br />_Example:_<br/>`evdev: {`<br />&nbsp;&nbsp;&nbsp;&nbsp;`enabled: true,`<br />&nbsp;&nbsp;&nbsp;&nbsp;`eventPath: '/dev/input/btremote',`<br />`}`                                                                                                                                                                                                                                                                                   |
 | &nbsp;&nbsp;&nbsp;&nbsp;`.eventPath` | Path to the event input file<br /> _Default:_ `/dev/input/btremote`                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -127,12 +133,11 @@ keyMap: {
 
 **If you are not using a Fire Stick Remote:** You may need to adjust the key assignments above to match your remote. See [Remote Setup](https://github.com/shbatm/MMM-KeyBindings/wiki/Remote-Setup) for how to run `evtest` and display the key names for your remote/device.
 
-**Note about changing key names:** If for example, you wanted "KEY_RIGHT" from the bluetooth remote to simulate a "k" being pressed on a keyboard:
+**Note about changing key names:** Example – map the remote's `KEY_RIGHT` to the keyboard key `k`:
 
-1. Add the whole evdevKeymap above to your config section.
-2. Change `ArrowRight: "KEY_RIGHT"` to `k: "KEY_RIGHT"`
-3. If you want to also be able to use a keyboard when using a remote browser:
-   - Make sure `enableKeyboard: true` is in your config and then add: `handleKeys: [ 'k' ]` to tell Mousetrap to bind to the "k" key. This is required because by default Mousetrap only binds to the same keys as those in the key map above.
+1. Add the whole `keyMap` above to your config section.
+2. Change `ArrowRight: "KEY_RIGHT"` to `k: "KEY_RIGHT"`.
+3. If you also want to press `k` on a keyboard, add it to `handleKeys: ['k']` (the native handler listens for `KeyboardEvent.key` names).
 
 ## Actions
 
@@ -197,8 +202,7 @@ This module was created as a stepping stone to allow other modules to be tweaked
 
 ## Known Issues
 
-- The following only work with `evdev` / remote control on the main screen. When using `Mousetrap` for keyboard events, these pass like regular key presses or flat-out don't work:
-  - `KEY_LONGPRESSED`
+- `KEY_LONGPRESSED` currently only comes from `evdev` on the main screen (Bluetooth remote path). Keyboard events use `KEY_PRESSED`.
 
 ## Contributing
 

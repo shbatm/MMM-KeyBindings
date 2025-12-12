@@ -23,7 +23,6 @@
   "scripts": {
     "lint": "eslint && prettier . --check",
     "lint:fix": "eslint --fix && prettier . --write",
-    "preinstall": "./preinstall.sh",
     "prepare": "[ -f node_modules/.bin/simple-git-hooks ] && simple-git-hooks || true",
     "test": "node --run lint && node --run test:spelling",
     "test:spelling": "cspell ."
@@ -36,10 +35,6 @@
       "eslint --fix",
       "prettier --write --ignore-unknown"
     ]
-  },
-  "dependencies": {
-    "mousetrap": "^1.6.5",
-    "mousetrap-global-bind": "^1.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
