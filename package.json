@@ -23,7 +23,7 @@
   "scripts": {
     "lint": "eslint && prettier . --check",
     "lint:fix": "eslint --fix && prettier . --write",
-    "prepare": "[ -f node_modules/.bin/simple-git-hooks ] && simple-git-hooks || true",
+    "prepare": "node -e \"try{require('simple-git-hooks').run()}catch(e){}\"",
     "test": "node --run lint && node --run test:spelling",
     "test:spelling": "cspell ."
   },
