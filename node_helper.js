@@ -38,7 +38,7 @@ class InputEventReader {
     this.reconnectInterval = null;
     this.pendingKeyPress = {};
 
-    Log.log(`[MMM-KeyBindings] Create InputEventReader for ${devicePath}`);
+    Log.log(`Create InputEventReader for ${devicePath}`);
   }
 
   /**
@@ -62,22 +62,22 @@ class InputEventReader {
     fs.open(this.devicePath, "r", (err, fd) => {
       if (err) {
         if (err.code === "EACCES") {
-          Log.error(`[MMM-KeyBindings] Permission denied for ${this.devicePath}`);
-          Log.error("[MMM-KeyBindings] Make sure your user is in the 'input' group: sudo usermod -aG input $USER (then logout/login)");
+          Log.error(`Permission denied for ${this.devicePath}`);
+          Log.error("Make sure your user is in the 'input' group: sudo usermod -aG input $USER (then logout/login)");
           this.waitForDevice();
           return;
         }
         if (err.code === "ENOENT" || err.code === "ENODEV") {
-          Log.info(`[MMM-KeyBindings] Device not available at ${this.devicePath}: ${err.code}, waiting for device…`);
+          Log.info(`Device not available at ${this.devicePath}: ${err.code}, waiting for device…`);
           this.waitForDevice();
         } else {
-          Log.error(`[MMM-KeyBindings] Error opening device: ${err}`);
+          Log.error(`Error opening device: ${err}`);
         }
         return;
       }
 
       this.fd = fd;
-      Log.log(`[MMM-KeyBindings] Connected to input device: ${this.devicePath}`);
+      Log.log(`Connected to input device: ${this.devicePath}`);
 
       // Start reading events
       this.readEvents();
@@ -97,11 +97,11 @@ class InputEventReader {
     fs.read(this.fd, buffer, 0, EVENT_SIZE, null, (err, bytesRead) => {
       if (err) {
         if (err.code === "ENODEV") {
-          Log.info("[MMM-KeyBindings] Device disconnected, waiting for reconnection…");
+          Log.info("Device disconnected, waiting for reconnection…");
           this.closeDevice();
           this.waitForDevice();
         } else {
-          Log.error(`[MMM-KeyBindings] Read error: ${err}`);
+          Log.error(`Read error: ${err}`);
         }
         return;
       }
@@ -131,7 +131,7 @@ class InputEventReader {
     }
 
     const keyName = KEY_CODES[code] || `KEY_${code}`;
-    Log.debug(`[MMM-KeyBindings] Key event: ${keyName} (code: ${code}, value: ${value})`);
+    Log.debug(`Key event: ${keyName} (code: ${code}, value: ${value})`);
 
     // value: 0 = released, 1 = pressed, 2 = repeated (held/long press)
     if (value > 0) {
@@ -145,7 +145,7 @@ class InputEventReader {
         const keyState = this.pendingKeyPress.value === 2
           ? "KEY_LONGPRESSED"
           : "KEY_PRESSED";
-        Log.log(`[MMM-KeyBindings] ${keyName} ${keyState === "KEY_LONGPRESSED"
+        Log.log(`${keyName} ${keyState === "KEY_LONGPRESSED"
           ? "long "
           : ""}pressed.`);
         this.onKey(keyName, keyState);
@@ -163,18 +163,18 @@ class InputEventReader {
     }
 
     this.reconnectInterval = setInterval(() => {
-      Log.debug("[MMM-KeyBindings] Checking for device reconnection...");
+      Log.debug("Checking for device reconnection...");
 
       // Check if device exists
       fs.access(this.devicePath, fs.constants.R_OK, (err) => {
         if (!err && this.isRunning) {
-          Log.log("[MMM-KeyBindings] Device available, attempting to reconnect...");
+          Log.log("Device available, attempting to reconnect...");
           this.openDevice();
         }
       });
     }, 5000);
 
-    Log.log("[MMM-KeyBindings] Monitoring for device reconnections...");
+    Log.log("Monitoring for device reconnections...");
   }
 
   /**
@@ -184,7 +184,7 @@ class InputEventReader {
     if (this.fd !== null) {
       fs.close(this.fd, (err) => {
         if (err) {
-          Log.debug(`[MMM-KeyBindings] Error closing fd: ${err.message}`);
+          Log.debug(`Error closing fd: ${err.message}`);
         }
       });
       this.fd = null;
@@ -195,7 +195,7 @@ class InputEventReader {
    * Stop reading and close the device
    */
   close () {
-    Log.log(`[MMM-KeyBindings] Closing reader for ${this.devicePath}`);
+    Log.log(`Closing reader for ${this.devicePath}`);
     this.isRunning = false;
 
     if (this.reconnectInterval) {
