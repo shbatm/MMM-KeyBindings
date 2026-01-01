@@ -1,8 +1,21 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.0.1](https://github.com/shbatm/MMM-KeyBindings/compare/v2.0.0...v2.0.1) (2026-01-01)
+
+
+### Chores
+
+* add changelog configuration and release script ([70b5f40](https://github.com/shbatm/MMM-KeyBindings/commit/70b5f40dbd6be11599e9be7118b16de286c3d122))
+* make prepare script cross-platform compatible ([b7fbc01](https://github.com/shbatm/MMM-KeyBindings/commit/b7fbc0165ce9210846762697d00dc7716258a5d7))
+* update devDependencies ([53b3cf1](https://github.com/shbatm/MMM-KeyBindings/commit/53b3cf1941a6262a0e3769eafceda5aec4277db2))
+* use bash syntax highlighting ([818df01](https://github.com/shbatm/MMM-KeyBindings/commit/818df01df74aeaa0a3a8cf1fae4b7e596ef932f5))
+
+
+### Code Refactoring
+
+* remove module prefix from log messages ([c1a67b4](https://github.com/shbatm/MMM-KeyBindings/commit/c1a67b42c1d05729e0feafa1417a20eae7901bc6))
 
 ## [2.0.0](https://github.com/shbatm/MMM-KeyBindings/compare/v1.3.13...v2.0.0) - 2025-12-12
 
