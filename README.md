@@ -32,7 +32,7 @@ You can then configure other modules to handle the key presses and, if necessary
 
 ## Installation
 
-```shell
+```bash
 cd ~/MagicMirror/modules
 git clone https://github.com/shbatm/MMM-KeyBindings
 ```
