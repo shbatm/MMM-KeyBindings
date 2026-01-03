@@ -26,7 +26,14 @@
     "reconnections",
     "shbatm",
     "SUBCLASSABLE",
-    "udevadm"
+    "udevadm",
+    "VOLUMEDOWN",
+    "VOLUMEUP",
+    "NEXTSONG",
+    "PREVIOUSSONG",
+    "STOPCD",
+    "SWITCHVIDEOMODE",
+    "usermod"
   ],
   "ignorePaths": ["node_modules/**"],
   "dictionaries": ["node"]
