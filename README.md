@@ -1,18 +1,14 @@
-# MMM-KeyBindings - Remote and Keyboard Control for MagicMirror²
+# MMM-KeyBindings
 
-**MMM-KeyBindings** is a module for the [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror/).
-
-It is a helper module that provides a method for controlling the MagicMirror² through a Bluetooth-connected Remote or through a keyboard by capturing button presses and keystrokes and either processing them or passing them on for use in other modules via notifications.
+**MMM-KeyBindings** is a module for [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror/) that allows you to control your MagicMirror using a Bluetooth-connected remote (e.g. Amazon Fire Stick Remote) or a keyboard. It captures key presses and sends them as notifications for other modules to handle, allowing you to navigate and control your mirror without touching the screen.
 
 The primary features are:
 
-1. Control from Amazon Fire Stick remote control or other bluetooth device. See: [Why Fire Stick?](https://github.com/shbatm/MMM-KeyBindings/wiki/Background-Information#WhyFire)
-2. Customizable keyboard navigation and control.
-   - Basic navigation keys are captured, but this can be changed in the config.
-3. Key Presses are sent other modules for action via notification.
-4. Assign keys to perform certain actions automatically (e.g. turn on/off the monitor when the HOME key is pressed, using MMM-Remote-Control).
-5. Allows a module to "take focus", allowing other modules to ignore keypresses when a particular module has focus (e.g. in a pop-up menu).
-6. Allows for multiple instances of the MagicMirror to be open on different screens and be independently controlled.
+1. Customizable key map for Bluetooth remotes (Fire Stick and others). See: [Why Fire Stick?](https://github.com/shbatm/MMM-KeyBindings/wiki/Background-Information#WhyFire)
+2. Customizable keyboard navigation — basic navigation keys are captured by default, but this can be changed in the config.
+3. Assign keys to perform actions automatically (e.g. toggle the monitor when HOME is long-pressed, using MMM-Remote-Control).
+4. Allows a module to "take focus", so other modules ignore keypresses when a particular module is active (e.g. in a pop-up menu).
+5. Supports multiple MagicMirror instances on different screens, independently controlled.
 
 ## Using the module
 
