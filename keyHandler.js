@@ -96,9 +96,6 @@ const KeyHandler = Class.extend({
     };
 
     this.currentMode = "DEFAULT";
-    if (typeof this.config.multiInstance === "undefined") {
-      this.config.multiInstance = true;
-    }
     // Build reverse lookup: MMM-KeyBindings key name → local name
     this.reverseMap = invertMap(this.config.map);
   },
