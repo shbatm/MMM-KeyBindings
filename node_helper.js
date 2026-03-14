@@ -215,10 +215,8 @@ module.exports = NodeHelper.create({
   },
 
   stop () {
-    if (this.evdevMonitorCreated) {
-      this.readers.forEach((reader) => {
-        reader.close();
-      });
+    for (const reader of this.readers) {
+      reader.close();
     }
   },
 
