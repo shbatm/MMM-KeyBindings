@@ -30,6 +30,7 @@ export default defineConfig([
       "@stylistic/quote-props": ["error", "as-needed"],
       "capitalized-comments": "off",
       "consistent-this": "off",
+      "func-style": "off",
       "id-length": "off",
       "import-x/no-unresolved": ["error", {ignore: ["eslint/config"]}],
       "init-declarations": "off",

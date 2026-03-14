@@ -1,4 +1,4 @@
-/* global NativeKeyHandler */
+/* global NativeKeyHandler, invertMap */
 
 const LOCAL_HOSTS = [
   "localhost",
@@ -69,13 +69,8 @@ Module.register("MMM-KeyBindings", {
 
     this.currentKeyPressMode = "DEFAULT";
 
-    // Generate a reverse key map
-    this.reverseKeyMap = {};
-    for (const eKey in this.config.keyMap) {
-      if (Object.hasOwn(this.config.keyMap, eKey)) {
-        this.reverseKeyMap[this.config.keyMap[eKey]] = eKey;
-      }
-    }
+    // Generate a reverse key map (evdev code → friendly name)
+    this.reverseKeyMap = invertMap(this.config.keyMap);
   },
 
   getScripts () {
@@ -146,7 +141,6 @@ Module.register("MMM-KeyBindings", {
 
   // socketNotificationReceived from helper
   socketNotificationReceived (notification, payload) {
-    // Log.log("Working notification system. Notification:", notification, "payload: ", payload);
     if (notification === "KEYPRESS") {
       if (this.config.enabledKeyStates.includes(payload.keyState)) {
         this.handleEvDevKeyPressEvents(payload);

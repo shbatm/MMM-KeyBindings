@@ -1,6 +1,16 @@
 /* global cloneObject, Class */
 
 /**
+ * Swap keys and values of a plain object.
+ * Used to build reverse lookup maps (value → key).
+ * @param {object} map - The object to invert
+ * @returns {object} A new object with keys and values swapped
+ */
+function invertMap (map) {
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
+}
+
+/**
  *** Extending your module to work with MMM-KeyBindings *****
  *
  *  Use the code below in your module to accept key press
@@ -89,12 +99,8 @@ const KeyHandler = Class.extend({
     if (typeof this.config.multiInstance === "undefined") {
       this.config.multiInstance = true;
     }
-    this.reverseMap = {};
-    for (const eKey in this.config.map) {
-      if (Object.hasOwn(this.config.map, eKey)) {
-        this.reverseMap[this.config.map[eKey]] = eKey;
-      }
-    }
+    // Build reverse lookup: MMM-KeyBindings key name → local name
+    this.reverseMap = invertMap(this.config.map);
   },
 
   /**
