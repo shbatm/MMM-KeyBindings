@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [2.0.2](https://github.com/shbatm/MMM-KeyBindings/compare/v2.0.1...v2.0.2) (2026-03-14)
+
+
+### Documentation
+
+* tighten README introduction ([870d277](https://github.com/shbatm/MMM-KeyBindings/commit/870d2771838fa6b3ac9bee6787f2d67996b0a2f5))
+
+
+### Chores
+
+* add additional words to cspell configuration ([bce44e8](https://github.com/shbatm/MMM-KeyBindings/commit/bce44e8ef957af78d1f53060d9b600df4eb48a05))
+* add demo config with keyboard mode switching ([4a69cb2](https://github.com/shbatm/MMM-KeyBindings/commit/4a69cb24a5d1690f9a2b86e031dc5a6cfe374c78))
+* change runner from ubuntu-latest to ubuntu-slim for automated tests ([8e88a42](https://github.com/shbatm/MMM-KeyBindings/commit/8e88a42bec45d561aab0d98a6a7a24f9c3e46d52))
+* remove old preinstall call from automated tests workflow ([eabb32b](https://github.com/shbatm/MMM-KeyBindings/commit/eabb32b8d19e5ed78716e546d380a15649c72e44))
+* remove superfluous prefix ([dda05af](https://github.com/shbatm/MMM-KeyBindings/commit/dda05afcb81dee9f6e590442223c3d3b269d9af2))
+* reorder dependencies in package.json ([25655e4](https://github.com/shbatm/MMM-KeyBindings/commit/25655e4d2fe3ad332d57e336a01a2c8b8447f7e1))
+* simplify prepare script ([dbf3282](https://github.com/shbatm/MMM-KeyBindings/commit/dbf3282cc21c2c5f7907dc7c4a7348bd681b2cfe))
+* update devDependencies ([8e77fa4](https://github.com/shbatm/MMM-KeyBindings/commit/8e77fa44b73c51351cb77afaa6c84426d064a1c0))
+* update eslint config ([608963c](https://github.com/shbatm/MMM-KeyBindings/commit/608963c91c01b094b010703e64f3d07689aefcdd))
+
+
+### Code Refactoring
+
+* remove redundant multiInstance default check in KeyHandler ([e4cd2b3](https://github.com/shbatm/MMM-KeyBindings/commit/e4cd2b309a54859f683f305525ca6eec80306719))
+* replace manual key map inversion with invertMap helper ([6a8ddf4](https://github.com/shbatm/MMM-KeyBindings/commit/6a8ddf43ce001d55d1f8ea20220e73b413ece004))
+* simplify stop() by removing redundant guard ([bf177f0](https://github.com/shbatm/MMM-KeyBindings/commit/bf177f0fab77caf5779230435fad9c8acc12a7d8))
+
 ## [2.0.1](https://github.com/shbatm/MMM-KeyBindings/compare/v2.0.0...v2.0.1) (2026-01-01)
 
 
