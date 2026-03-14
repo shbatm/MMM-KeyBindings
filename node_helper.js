@@ -224,8 +224,8 @@ module.exports = NodeHelper.create({
     if (notification === "ENABLE_EVDEV") {
       if (!this.evdevMonitorCreated) {
         if (!payload.eventPath) {
-          Log.error("MMM-KeyBindings: evdev is enabled but 'eventPath' is not configured!");
-          Log.error("MMM-KeyBindings: Please add eventPath to your config, e.g.: evdev: { enabled: true, eventPath: '/dev/input/btremote' }");
+          Log.error("evdev is enabled but 'eventPath' is not configured!");
+          Log.error("Please add eventPath to your config, e.g.: evdev: { enabled: true, eventPath: '/dev/input/btremote' }");
           return;
         }
 
