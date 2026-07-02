@@ -107,23 +107,22 @@ Module.register("MMM-KeyBindings", {
   },
 
   handleEvDevKeyPressEvents (payload) {
-    // Add the current mode to the payload
-    payload.currentMode = this.currentKeyPressMode;
+    const normalizedKeyName = payload.keyName in this.reverseKeyMap
+      ? this.reverseKeyMap[payload.keyName]
+      : payload.keyName;
 
-    /*
-     * Add the sender to the payload (useful if you have multiple clients connected;
-     * the evdev keys only work on the main server)
-     */
-    payload.sender = "SERVER";
-    payload.protocol = "evdev";
-    payload.instance = this.instance;
+    const eventPayload = {
+      ...payload,
+      keyName: normalizedKeyName,
+      currentMode: this.currentKeyPressMode,
+      // evdev keys originate from the server-side helper.
+      sender: "SERVER",
+      protocol: "evdev",
+      instance: this.instance
+    };
 
-    // Standardize the name
-    if (payload.keyName in this.reverseKeyMap) {
-      payload.keyName = this.reverseKeyMap[payload.keyName];
-    }
-    this.sendNotification("KEYPRESS", payload);
-    this.doAction(payload);
+    this.sendNotification("KEYPRESS", eventPayload);
+    this.doAction(eventPayload);
   },
 
   // socketNotificationReceived from helper
