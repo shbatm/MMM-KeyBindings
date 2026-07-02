@@ -1,15 +1,29 @@
 /* Unit tests for keyHandler.js using Node's built-in test runner */
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
 const {test, describe} = require("node:test");
 
-/**
- * Swap keys and values of a plain object.
- * Used to build reverse lookup maps (value → key).
- * @param {object} map - The object to invert
- * @returns {object} A new object with keys and values swapped
- */
-function invertMap (map) {
-  return Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
+function loadKeyHandlerModule () {
+  const sourcePath = path.resolve(__dirname, "../../keyHandler.js");
+  const source = fs.readFileSync(sourcePath, "utf8");
+  const sandbox = {console};
+  sandbox.globalThis = sandbox;
+
+  vm.runInNewContext(
+    `${source}\n;globalThis.testExports = { KeyHandler, invertMap };`,
+    sandbox,
+    {filename: sourcePath}
+  );
+
+  return sandbox.testExports;
+}
+
+const {KeyHandler, invertMap} = loadKeyHandlerModule();
+
+function plainObject (value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 describe("invertMap utility function", () => {
@@ -20,7 +34,7 @@ describe("invertMap utility function", () => {
       key3: "value3"
     };
     const output = invertMap(input);
-    assert.deepEqual(output, {
+    assert.deepEqual(plainObject(output), {
       value1: "key1",
       value2: "key2",
       value3: "key3"
@@ -30,13 +44,13 @@ describe("invertMap utility function", () => {
   test("handles empty object", () => {
     const input = {};
     const output = invertMap(input);
-    assert.deepEqual(output, {});
+    assert.deepEqual(plainObject(output), {});
   });
 
   test("handles single entry", () => {
     const input = {key: "value"};
     const output = invertMap(input);
-    assert.deepEqual(output, {value: "key"});
+    assert.deepEqual(plainObject(output), {value: "key"});
   });
 
   test("handles special characters in keys and values", () => {
@@ -45,7 +59,7 @@ describe("invertMap utility function", () => {
       KEY_RIGHT: "ArrowRight"
     };
     const output = invertMap(input);
-    assert.deepEqual(output, {
+    assert.deepEqual(plainObject(output), {
       ArrowLeft: "KEY_LEFT",
       ArrowRight: "KEY_RIGHT"
     });
@@ -60,117 +74,87 @@ describe("invertMap utility function", () => {
 });
 
 describe("KeyHandler class", () => {
-  // Mock KeyHandler for testing
-  class KeyHandler {
-    constructor () {
-      this.defaults = {
-        mode: "DEFAULT",
-        map: {
-          Right: "ArrowRight",
-          Left: "ArrowLeft"
-        },
-        multiInstance: true,
-        takeFocus: "Enter",
-        debug: false
-      };
-    }
-
-    init (name, config) {
-      this.name = name;
-      this.config = {
-        ...this.defaults,
-        ...config
-      };
-
-      this.currentMode = "DEFAULT";
-      this.reverseMap = invertMap(this.config.map);
-    }
-  }
-
-  test("creates instance with default configuration", () => {
-    const handler = new KeyHandler();
-    assert.equal(typeof handler.defaults, "object");
-    assert.equal(handler.defaults.mode, "DEFAULT");
-    assert.deepEqual(handler.defaults.map, {
+  test("exposes the expected default configuration", () => {
+    assert.equal(KeyHandler.prototype.defaults.mode, "DEFAULT");
+    assert.deepEqual(plainObject(KeyHandler.prototype.defaults.map), {
       Right: "ArrowRight",
       Left: "ArrowLeft"
     });
   });
 
-  test("initializes with custom configuration", () => {
-    const handler = new KeyHandler();
-    const customConfig = {
-      mode: "CUSTOM",
+  test("creates class-based handlers with isolated key maps", () => {
+    class ClassHandler extends KeyHandler {}
+
+    KeyHandler.register("ClassHandler", ClassHandler);
+
+    const firstHandler = KeyHandler.create("ClassHandler", {
       map: {
-        Up: "ArrowUp",
+        Up: "ArrowUp"
+      }
+    });
+    const secondHandler = KeyHandler.create("ClassHandler", {
+      map: {
         Down: "ArrowDown"
       }
-    };
-    handler.init("TestModule", customConfig);
+    });
 
-    assert.equal(handler.name, "TestModule");
-    assert.equal(handler.config.mode, "CUSTOM");
-    assert.deepEqual(handler.config.map, {
-      Up: "ArrowUp",
+    assert.ok(firstHandler instanceof KeyHandler);
+    assert.ok(firstHandler instanceof ClassHandler);
+    assert.equal(firstHandler.name, "ClassHandler");
+    assert.deepEqual(plainObject(firstHandler.config.map), {
+      Up: "ArrowUp"
+    });
+
+    firstHandler.config.map.Up = "ArrowRight";
+
+    assert.deepEqual(plainObject(secondHandler.config.map), {
       Down: "ArrowDown"
     });
   });
 
-  test("merges custom config with defaults", () => {
-    const handler = new KeyHandler();
-    const customConfig = {
-      mode: "CUSTOM"
-    };
-    handler.init("TestModule", customConfig);
-
-    assert.equal(handler.config.mode, "CUSTOM");
-    assert.equal(handler.config.multiInstance, true); // from defaults
-    assert.equal(handler.config.debug, false); // from defaults
-  });
-
-  test("builds reverse map correctly", () => {
-    const handler = new KeyHandler();
-    const customConfig = {
-      map: {
-        Right: "ArrowRight",
-        Left: "ArrowLeft",
-        Up: "ArrowUp"
+  test("normalizes legacy object registrations into KeyHandler instances", () => {
+    KeyHandler.register("LegacyHandler", {
+      defaults: {
+        mode: "LEGACY",
+        map: {
+          Left: "ArrowLeft"
+        },
+        multiInstance: false,
+        takeFocus: "Enter",
+        debug: false
+      },
+      validKeyPress () {
+        return this.name;
       }
-    };
-    handler.init("TestModule", customConfig);
+    });
 
-    assert.deepEqual(handler.reverseMap, {
-      ArrowRight: "Right",
-      ArrowLeft: "Left",
-      ArrowUp: "Up"
+    const firstHandler = KeyHandler.create("LegacyHandler", {
+      map: {
+        Left: "ArrowLeft"
+      }
+    });
+    const secondHandler = KeyHandler.create("LegacyHandler", {
+      map: {
+        Right: "ArrowRight"
+      }
+    });
+
+    assert.ok(firstHandler instanceof KeyHandler);
+    assert.equal(firstHandler.name, "LegacyHandler");
+    assert.equal(typeof firstHandler.validKeyPress, "function");
+    assert.equal(firstHandler.config.mode, "LEGACY");
+    assert.deepEqual(plainObject(firstHandler.config.map), {
+      Left: "ArrowLeft"
+    });
+
+    firstHandler.config.map.Left = "ArrowRight";
+
+    assert.deepEqual(plainObject(secondHandler.config.map), {
+      Right: "ArrowRight"
     });
   });
 
-  test("initializes with empty key map", () => {
-    const handler = new KeyHandler();
-    const customConfig = {
-      map: {}
-    };
-    handler.init("TestModule", customConfig);
-
-    assert.deepEqual(handler.config.map, {});
-    assert.deepEqual(handler.reverseMap, {});
-  });
-
-  test("sets initial mode to DEFAULT", () => {
-    const handler = new KeyHandler();
-    handler.init("TestModule", {});
-
-    assert.equal(handler.currentMode, "DEFAULT");
-  });
-
-  test("preserves custom mode from config", () => {
-    const handler = new KeyHandler();
-    const customConfig = {
-      mode: "FOCUS"
-    };
-    handler.init("TestModule", customConfig);
-
-    assert.equal(handler.config.mode, "FOCUS");
+  test("returns undefined for unknown handlers", () => {
+    assert.equal(KeyHandler.create("DoesNotExist", {}), undefined);
   });
 });
