@@ -12,8 +12,8 @@ Module.register("MMM-KeyBindings", {
   defaults: {
     enabledKeyStates: ["KEY_PRESSED", "KEY_LONGPRESSED"],
     // Other options are 'KEY_UP', 'KEY_DOWN', 'KEY_HOLD' but evdev.raw_mode must be true to receive
-    handleKeys: [], // List of additional keys to handle in this module; blank == standard set
-    disableKeys: [], // list of keys to ignore from the default set.
+    handleKeys: [], // Additional keys for NativeKeyHandler; blank means use the configured key map.
+    disableKeys: [], // Keys to ignore from the NativeKeyHandler key set.
     enableKeyboard: false,
     evdev: {
       enabled: true,
@@ -83,7 +83,7 @@ Module.register("MMM-KeyBindings", {
   setupKeyboardHandler () {
     let keys = Object.keys(this.config.keyMap || {});
 
-    // Add extra keys from config and avoid duplicates.
+    // Add extra keys from config and avoid duplicates before passing them to NativeKeyHandler.
     keys = [...new Set([...keys, ...this.config.handleKeys])];
 
     // Remove disabled keys
