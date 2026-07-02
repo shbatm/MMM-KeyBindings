@@ -1,5 +1,3 @@
-/* global cloneObject */
-
 /**
  * Swap keys and values of a plain object.
  * Used to build reverse lookup maps (value → key).
@@ -20,70 +18,6 @@ function invertMap (map) {
  *
  */
 class KeyHandler {
-  constructor () {
-    this.defaults = {
-      /**
-       ** defaults ***
-       *
-       *   Default Key Binding Configuration, can be overwritten on init
-       *
-       */
-      /** * MMM-KeyBindings STANDARD MAPPING * **/
-      /* Add the "mode" you would like to respond to */
-      mode: "DEFAULT",
-      map: {
-      /*
-       * Add each key you want to respond to in the form:
-       *      yourKeyName: "keyName_from_MMM-KeyBindings"
-       */
-        Right: "ArrowRight",
-        Left: "ArrowLeft"
-      /* ... */
-      },
-
-      /** * OPTIONAL ***/
-      /*
-       *  When using multiple instances (i.e. the screen connected
-       *  to the server & browser windows on other computers):
-       *
-       *  multiInstance: true -- the bluetooth device will only
-       *  control the local server's instance.
-       *  The browser windows are controlled by the local
-       *   keyboard (assuming enableMousetrap:true in
-       *   MMM-KeyBindings' config)
-       *
-       *  multiInstance: false -- the bluetooth device will
-       *  control all instances of this module.
-       *
-       */
-      multiInstance: true,
-
-      /*
-       * If you would like your module to "take focus" when a
-       * particular key is pressed change the mode
-       * setting to "MYKEYWORD" and add a "takeFocus"
-       * mapped to a key. This will keep other modules
-       * from responding to key presses when you have focus.
-       *
-       * Just remember you must release focus when done!
-       * Call this.releaseFocus()
-       * when you're ready to release the focus.
-       *
-       * Additional Option:
-       * For complex setups you can also set an "external interrupt"
-       * in the MMM-KeyBindings config which can set the mode
-       * without first sending a keypress to all modules
-       *
-       * Example below takes the focus when "Enter" is pressed
-       *
-       */
-      takeFocus: "Enter",
-      /* OR AS AN OBJECT: */
-      // takeFocus: { keyName: "Enter", keyState: "KEY_LONGPRESSED" }
-      debug: false
-    };
-  }
-
   /**
    * init()
    * Is called when the module is instantiated.
@@ -96,6 +30,8 @@ class KeyHandler {
       ...this.defaults,
       ...config
     };
+    // Give each instance its own key map so handlers never share state.
+    this.config.map = {...this.config.map};
 
     this.currentMode = "DEFAULT";
     // Build reverse lookup: MMM-KeyBindings key name → local name
@@ -260,36 +196,79 @@ class KeyHandler {
   }
 }
 
+/**
+ * Default key binding configuration shared by all handlers.
+ * A registered definition may override any of these; each created handler
+ * gets its own `config` in init(), so instances never share state.
+ */
+KeyHandler.prototype.defaults = {
+  // The "mode" this handler responds to.
+  mode: "DEFAULT",
+  // Map your local key names to MMM-KeyBindings key names.
+  map: {
+    Right: "ArrowRight",
+    Left: "ArrowLeft"
+  },
+  /*
+   * multiInstance: true  -> bluetooth device controls only the local server instance.
+   * multiInstance: false -> bluetooth device controls all instances of this module.
+   */
+  multiInstance: true,
+  /*
+   * Set "takeFocus" to a key (string) or { keyName, keyState } to grab focus so
+   * other modules stop reacting to key presses until releaseFocus() is called.
+   */
+  takeFocus: "Enter",
+  debug: false
+};
+
 KeyHandler.definitions = {};
 
 /**
- * Create a new KeyHandler instance
+ * Register a key handler definition.
+ * Accepts either a KeyHandler subclass (modern) or a plain-object mixin
+ * (legacy). Mixins are normalized into a subclass so their methods live on
+ * the prototype and every created handler is an isolated instance.
  * @param {string} name - Handler name
- * @param {object} config - Handler configuration
- * @returns {KeyHandler|undefined} - New KeyHandler instance or undefined
+ * @param {Function|object} definition - KeyHandler subclass or mixin object
  */
-KeyHandler.create = function create (name, config) {
-  // Make sure module definition is available.
-  if (!KeyHandler.definitions[name]) {
-    return undefined;
+KeyHandler.register = function register (name, definition) {
+  if (typeof definition === "function") {
+    // Modern: a KeyHandler subclass / constructor.
+    KeyHandler.definitions[name] = definition;
+    return;
   }
 
-  const handlerDefinition = KeyHandler.definitions[name];
-  const clonedDefinition = cloneObject(handlerDefinition);
-
-  // Note that we clone the definition. Otherwise the objects are shared, which gives problems.
-  const handler = new KeyHandler();
-  Object.assign(handler, clonedDefinition);
-  handler.init(name, config);
-
-  return handler;
+  /*
+   * Legacy: a plain-object mixin. Build a prototype (once) that inherits from
+   * KeyHandler and carries the definition's methods, so every created handler
+   * is a fresh, isolated instance without cloning.
+   */
+  KeyHandler.definitions[name] = Object.assign(
+    Object.create(KeyHandler.prototype),
+    definition
+  );
 };
 
 /**
- * Register a KeyHandler definition
+ * Create a new key handler instance.
  * @param {string} name - Handler name
- * @param {object} handlerDefinition - Handler definition object
+ * @param {object} config - Handler configuration
+ * @returns {KeyHandler|undefined} New instance, or undefined if unregistered
  */
-KeyHandler.register = function register (name, handlerDefinition) {
-  KeyHandler.definitions[name] = handlerDefinition;
+KeyHandler.create = function create (name, config) {
+  const definition = KeyHandler.definitions[name];
+  if (!definition) {
+    return undefined;
+  }
+
+  let handler;
+  if (typeof definition === "function") {
+    const Handler = definition;
+    handler = new Handler();
+  } else {
+    handler = Object.create(definition);
+  }
+  handler.init(name, config);
+  return handler;
 };
