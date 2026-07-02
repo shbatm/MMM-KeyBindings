@@ -14,10 +14,11 @@ const EV_KEY = 0x01;
  * 64-bit: 24 bytes (8+8+2+2+4)
  * 32-bit: 16 bytes (4+4+2+2+4)
  */
-const EVENT_SIZE = process.arch === "arm"
+const IS_32_BIT_ARCH = ["arm", "ia32"].includes(process.arch);
+const EVENT_SIZE = IS_32_BIT_ARCH
   ? 16
   : 24;
-const TIME_SIZE = process.arch === "arm"
+const TIME_SIZE = IS_32_BIT_ARCH
   ? 8
   : 16;
 
