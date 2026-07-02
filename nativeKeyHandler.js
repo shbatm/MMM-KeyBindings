@@ -3,8 +3,8 @@
  */
 
 /* exported NativeKeyHandler */
-/* eslint-disable no-unused-vars */
 
+// eslint-disable-next-line no-unused-vars
 const NativeKeyHandler = {
   /**
    * Map browser key names to standardized names
