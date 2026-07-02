@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [2.0.4](https://github.com/shbatm/MMM-KeyBindings/compare/v2.0.3...v2.0.4) (2026-07-02)
+
+
+### Fixed
+
+* build key handlers without global cloneObject ([7abbbb5](https://github.com/shbatm/MMM-KeyBindings/commit/7abbbb50b40e2755d7a81b2804c01fefb0399df0)), closes [#67](https://github.com/shbatm/MMM-KeyBindings/issues/67)
+
+
+### Documentation
+
+* align keyboard comments with NativeKeyHandler ([a80e453](https://github.com/shbatm/MMM-KeyBindings/commit/a80e4539fd80f73b6495f986bacdf433be612cd7))
+
+
+### Chores
+
+* update checkout action to version 7 ([0fd1412](https://github.com/shbatm/MMM-KeyBindings/commit/0fd14125d501e5a6d55411579b3416d43df5ea08))
+* update devDependencies ([55b2d16](https://github.com/shbatm/MMM-KeyBindings/commit/55b2d16ff6f2395320cd414af43f57e46aef37cf))
+
+
+### Code Refactoring
+
+* avoid mutating evdev keypress payload ([fd44878](https://github.com/shbatm/MMM-KeyBindings/commit/fd44878eae15f5d234e1a57d001d4f35b7a8c777))
+* derive keyboard keys from keyMap config ([c2b40a2](https://github.com/shbatm/MMM-KeyBindings/commit/c2b40a2595823194e6d8634645028c7865538d4e))
+* narrow NativeKeyHandler lint suppression ([283f17d](https://github.com/shbatm/MMM-KeyBindings/commit/283f17d73f6a82c287e4bf45b27c46cd931d835a))
+* register native keyboard listeners once ([17d5838](https://github.com/shbatm/MMM-KeyBindings/commit/17d5838f37b2bf435cafe15ff2df5c2f01306372))
+* remove redundant self alias in setupKeyboardHandler ([47da100](https://github.com/shbatm/MMM-KeyBindings/commit/47da100f6c56a441e599155b55e6ff1420af1a0e))
+* simplify architecture check for event sizes ([07e70b1](https://github.com/shbatm/MMM-KeyBindings/commit/07e70b1214de7e42aa9442e6918dcf5b1cfbec6e))
+
+
+### Tests
+
+* replace mock keyHandler tests with real module tests ([dbc7a3c](https://github.com/shbatm/MMM-KeyBindings/commit/dbc7a3c7e4a09141861c990d425ec142e21cf6ab))
+
 ## [2.0.3](https://github.com/shbatm/MMM-KeyBindings/compare/v2.0.2...v2.0.3) (2026-05-11)
 
 
