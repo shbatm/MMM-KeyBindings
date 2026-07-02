@@ -223,6 +223,7 @@ KeyHandler.prototype.defaults = {
 };
 
 KeyHandler.definitions = {};
+KeyHandler.legacyRegistrationWarned = false;
 
 /**
  * Register a key handler definition.
@@ -237,6 +238,11 @@ KeyHandler.register = function register (name, definition) {
     // Modern: a KeyHandler subclass / constructor.
     KeyHandler.definitions[name] = definition;
     return;
+  }
+
+  if (!KeyHandler.legacyRegistrationWarned && typeof Log !== "undefined" && typeof Log.warn === "function") {
+    Log.warn("MMM-KeyBindings: registering KeyHandler definitions as plain objects is deprecated. Please migrate to a KeyHandler subclass.");
+    KeyHandler.legacyRegistrationWarned = true;
   }
 
   /*

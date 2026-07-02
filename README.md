@@ -190,6 +190,32 @@ actions: [
 
 To handle key press events in your module, see this [wiki page](https://github.com/shbatm/MMM-KeyBindings/wiki/Integration-into-Other-Modules)
 
+### Modern KeyHandler Registration
+
+The recommended way to define a handler is to extend `KeyHandler` and register the class directly. This keeps the handler methods on the prototype and gives each instance its own runtime state.
+
+```js
+class CarouselKeyHandler extends KeyHandler {
+  validKeyPress(kp) {
+    if (kp.keyName === this.config.map.Left) {
+      this.sendNotification("CAROUSEL_PREVIOUS");
+    }
+
+    if (kp.keyName === this.config.map.Right) {
+      this.sendNotification("CAROUSEL_NEXT");
+    }
+  }
+
+  onFocus() {
+    Log.info(`${this.name} is ready for key navigation.`);
+  }
+}
+
+KeyHandler.register("MMM-Carousel", CarouselKeyHandler);
+```
+
+Legacy plain-object registrations are still supported, but the subclass form above is the modern and preferred style for new code.
+
 ## Development Path
 
 This module was created as a stepping stone to allow other modules to be tweaked to respond to keyboard presses--mainly for navigation purposes. Please add any requests via the Issues for this repo.

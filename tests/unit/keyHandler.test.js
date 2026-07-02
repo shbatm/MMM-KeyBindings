@@ -17,10 +17,13 @@ function loadKeyHandlerModule () {
     {filename: sourcePath}
   );
 
-  return sandbox.testExports;
+  return {
+    ...sandbox.testExports,
+    sandbox
+  };
 }
 
-const {KeyHandler, invertMap} = loadKeyHandlerModule();
+const {KeyHandler, invertMap, sandbox} = loadKeyHandlerModule();
 
 function plainObject (value) {
   return JSON.parse(JSON.stringify(value));
@@ -113,6 +116,13 @@ describe("KeyHandler class", () => {
   });
 
   test("normalizes legacy object registrations into KeyHandler instances", () => {
+    const warnings = [];
+    sandbox.Log = {
+      warn (message) {
+        warnings.push(message);
+      }
+    };
+
     KeyHandler.register("LegacyHandler", {
       defaults: {
         mode: "LEGACY",
@@ -146,6 +156,8 @@ describe("KeyHandler class", () => {
     assert.deepEqual(plainObject(firstHandler.config.map), {
       Left: "ArrowLeft"
     });
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /deprecated/iu);
 
     firstHandler.config.map.Left = "ArrowRight";
 
