@@ -41,6 +41,11 @@ const NativeKeyHandler = {
   suppressOnKeyUp: ["Home", "Menu"],
 
   /**
+   * Internal state to avoid duplicate DOM listener registration.
+   */
+  listenersRegistered: false,
+
+  /**
    * Initialize the key handler
    * @param {Array} keys - Array of key names to listen for
    * @param {Function} callback - Callback function(keyName, event)
@@ -49,9 +54,12 @@ const NativeKeyHandler = {
     this.activeKeys = keys;
     this.handlers.push(callback);
 
-    // Use capture phase to intercept before other handlers
-    document.addEventListener("keydown", (e) => this.handleKeyDown(e), true);
-    document.addEventListener("keyup", (e) => this.handleKeyUp(e), true);
+    if (!this.listenersRegistered) {
+      // Use capture phase to intercept before other handlers.
+      document.addEventListener("keydown", (e) => this.handleKeyDown(e), true);
+      document.addEventListener("keyup", (e) => this.handleKeyUp(e), true);
+      this.listenersRegistered = true;
+    }
   },
 
   /**
