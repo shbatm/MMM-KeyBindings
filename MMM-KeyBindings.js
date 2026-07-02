@@ -81,22 +81,10 @@ Module.register("MMM-KeyBindings", {
   },
 
   setupKeyboardHandler () {
-    let keys = [
-      "Home",
-      "Enter",
-      "ArrowLeft",
-      "ArrowRight",
-      "ArrowUp",
-      "ArrowDown",
-      "Return",
-      "MediaPlayPause",
-      "MediaNextTrack",
-      "MediaPreviousTrack",
-      "Menu"
-    ];
+    let keys = Object.keys(this.config.keyMap || {});
 
-    // Add extra keys from config
-    keys = keys.concat(this.config.handleKeys);
+    // Add extra keys from config and avoid duplicates.
+    keys = [...new Set([...keys, ...this.config.handleKeys])];
 
     // Remove disabled keys
     keys = keys.filter((k) => !this.config.disableKeys.includes(k));
