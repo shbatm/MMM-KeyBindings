@@ -81,7 +81,6 @@ Module.register("MMM-KeyBindings", {
   },
 
   setupKeyboardHandler () {
-    const self = this;
     let keys = [
       "Home",
       "Enter",
@@ -108,14 +107,14 @@ Module.register("MMM-KeyBindings", {
       const payload = {
         keyName,
         keyState: "KEY_PRESSED",
-        currentMode: self.currentKeyPressMode,
-        sender: self.instance,
-        instance: self.instance,
+        currentMode: this.currentKeyPressMode,
+        sender: this.instance,
+        instance: this.instance,
         protocol: "keyboard"
       };
 
-      self.sendNotification("KEYPRESS", payload);
-      self.doAction(payload);
+      this.sendNotification("KEYPRESS", payload);
+      this.doAction(payload);
     });
   },
 
