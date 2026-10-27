@@ -1,14 +1,4 @@
 /**
- * Swap keys and values of a plain object.
- * Used to build reverse lookup maps (value → key).
- * @param {object} map - The object to invert
- * @returns {object} A new object with keys and values swapped
- */
-function invertMap (map) {
-  return Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
-}
-
-/**
  *** Extending your module to work with MMM-KeyBindings *****
  *
  *  Use the code below in your module to accept key press
@@ -18,6 +8,15 @@ function invertMap (map) {
  *
  */
 class KeyHandler {
+  /**
+   * Swap keys and values to build a reverse lookup map.
+   * @param {object} map - The object to invert
+   * @returns {object} A new object with keys and values swapped
+   */
+  static invertMap (map) {
+    return Object.fromEntries(Object.entries(map).map(([key, value]) => [value, key]));
+  }
+
   /**
    * init()
    * Is called when the module is instantiated.
@@ -35,7 +34,7 @@ class KeyHandler {
 
     this.currentMode = "DEFAULT";
     // Build reverse lookup: MMM-KeyBindings key name → local name
-    this.reverseMap = invertMap(this.config.map);
+    this.reverseMap = KeyHandler.invertMap(this.config.map);
   }
 
   /**

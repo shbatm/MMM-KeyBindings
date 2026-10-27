@@ -12,7 +12,7 @@ function loadKeyHandlerModule () {
   sandbox.globalThis = sandbox;
 
   vm.runInNewContext(
-    `${source}\n;globalThis.testExports = { KeyHandler, invertMap };`,
+    `${source}\n;globalThis.testExports = {KeyHandler};`,
     sandbox,
     {filename: sourcePath}
   );
@@ -22,20 +22,20 @@ function loadKeyHandlerModule () {
   };
 }
 
-const {KeyHandler, invertMap} = loadKeyHandlerModule();
+const {KeyHandler} = loadKeyHandlerModule();
 
 function plainObject (value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-describe("invertMap utility function", () => {
+describe("KeyHandler.invertMap", () => {
   test("swaps keys and values correctly", () => {
     const input = {
       key1: "value1",
       key2: "value2",
       key3: "value3"
     };
-    const output = invertMap(input);
+    const output = KeyHandler.invertMap(input);
     assert.deepEqual(plainObject(output), {
       value1: "key1",
       value2: "key2",
@@ -45,13 +45,13 @@ describe("invertMap utility function", () => {
 
   test("handles empty object", () => {
     const input = {};
-    const output = invertMap(input);
+    const output = KeyHandler.invertMap(input);
     assert.deepEqual(plainObject(output), {});
   });
 
   test("handles single entry", () => {
     const input = {key: "value"};
-    const output = invertMap(input);
+    const output = KeyHandler.invertMap(input);
     assert.deepEqual(plainObject(output), {value: "key"});
   });
 
@@ -60,7 +60,7 @@ describe("invertMap utility function", () => {
       KEY_LEFT: "ArrowLeft",
       KEY_RIGHT: "ArrowRight"
     };
-    const output = invertMap(input);
+    const output = KeyHandler.invertMap(input);
     assert.deepEqual(plainObject(output), {
       ArrowLeft: "KEY_LEFT",
       ArrowRight: "KEY_RIGHT"
@@ -69,7 +69,7 @@ describe("invertMap utility function", () => {
 
   test("returns a new object (does not mutate input)", () => {
     const input = {key: "value"};
-    const output = invertMap(input);
+    const output = KeyHandler.invertMap(input);
     assert.notEqual(input, output);
     assert.deepEqual(input, {key: "value"});
   });

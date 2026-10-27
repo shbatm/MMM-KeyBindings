@@ -1,4 +1,4 @@
-/* global NativeKeyHandler, invertMap */
+/* global KeyHandler */
 
 const LOCAL_HOSTS = [
   "localhost",
@@ -64,7 +64,7 @@ Module.register("MMM-KeyBindings", {
     this.currentKeyPressMode = "DEFAULT";
 
     // Generate a reverse key map (evdev code → friendly name)
-    this.reverseKeyMap = invertMap(this.config.keyMap);
+    this.reverseKeyMap = KeyHandler.invertMap(this.config.keyMap);
   },
 
   getScripts () {
@@ -85,7 +85,7 @@ Module.register("MMM-KeyBindings", {
 
     Log.debug(`[MMM-KeyBindings] Keyboard handler listening for: ${keys.join(", ")}`);
 
-    NativeKeyHandler.init(keys, (keyName) => {
+    window.MMMKeyBindingsNativeKeyHandler.init(keys, (keyName) => {
       const payload = {
         keyName,
         keyState: "KEY_PRESSED",

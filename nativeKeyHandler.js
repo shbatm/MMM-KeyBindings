@@ -2,10 +2,7 @@
  * Native Keyboard Handler for MMM-KeyBindings
  */
 
-/* exported NativeKeyHandler */
-
-// eslint-disable-next-line no-unused-vars
-const NativeKeyHandler = {
+window.MMMKeyBindingsNativeKeyHandler = {
   /**
    * Map browser key names to standardized names
    */
