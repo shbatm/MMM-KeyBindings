@@ -38,6 +38,7 @@ class InputEventReader {
     this.isRunning = false;
     this.reconnectInterval = null;
     this.pendingKeyPress = {};
+    this.openAttempt = 0;
 
     Log.log(`Create InputEventReader for ${devicePath}`);
   }
@@ -54,6 +55,8 @@ class InputEventReader {
    * Open the device and start reading events
    */
   openDevice () {
+    const openAttempt = ++this.openAttempt;
+
     // Clear any existing reconnect interval
     if (this.reconnectInterval) {
       clearInterval(this.reconnectInterval);
@@ -61,6 +64,13 @@ class InputEventReader {
     }
 
     fs.open(this.devicePath, "r", (err, fd) => {
+      if (!this.isRunning || openAttempt !== this.openAttempt) {
+        if (!err && fd !== undefined) {
+          InputEventReader.closeFileDescriptor(fd);
+        }
+        return;
+      }
+
       if (err) {
         if (err.code === "EACCES") {
           Log.error(`Permission denied for ${this.devicePath}`);
@@ -183,13 +193,17 @@ class InputEventReader {
    */
   closeDevice () {
     if (this.fd !== null) {
-      fs.close(this.fd, (err) => {
-        if (err) {
-          Log.debug(`Error closing fd: ${err.message}`);
-        }
-      });
+      InputEventReader.closeFileDescriptor(this.fd);
       this.fd = null;
     }
+  }
+
+  static closeFileDescriptor (fd) {
+    fs.close(fd, (err) => {
+      if (err) {
+        Log.debug(`Error closing fd: ${err.message}`);
+      }
+    });
   }
 
   /**
@@ -198,6 +212,7 @@ class InputEventReader {
   close () {
     Log.log(`Closing reader for ${this.devicePath}`);
     this.isRunning = false;
+    this.openAttempt += 1;
 
     if (this.reconnectInterval) {
       clearInterval(this.reconnectInterval);

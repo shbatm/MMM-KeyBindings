@@ -10,6 +10,9 @@ function loadNodeHelper () {
   const source = fs.readFileSync(sourcePath, "utf8");
   const errors = [];
   const logs = [];
+  const openCallbacks = [];
+  const closedFileDescriptors = [];
+  const readFileDescriptors = [];
   const helperDefinition = {};
   const logger = {
     error (message) {
@@ -27,11 +30,15 @@ function loadNodeHelper () {
   };
   const fsMock = {
     constants: {R_OK: 4},
-    open () {
-      return undefined;
+    open (devicePath, flags, callback) {
+      openCallbacks.push(callback);
     },
-    close () {
-      return undefined;
+    close (fd, callback) {
+      closedFileDescriptors.push(fd);
+      callback(null);
+    },
+    read (fd) {
+      readFileDescriptors.push(fd);
     },
     access () {
       return undefined;
@@ -69,7 +76,7 @@ function loadNodeHelper () {
     setInterval
   }, {filename: sourcePath});
 
-  return {errors, helper: helperDefinition, logs};
+  return {closedFileDescriptors, errors, helper: helperDefinition, logs, openCallbacks, readFileDescriptors};
 }
 
 function enableEvdev (eventPath) {
@@ -96,6 +103,25 @@ describe("node helper evdev configuration", () => {
       "/dev/input/remote-keyboard",
       "/dev/input/remote-media"
     ]);
+  });
+
+  test("ignores a stale open after the reader stops and restarts", () => {
+    const {closedFileDescriptors, helper, openCallbacks, readFileDescriptors} = enableEvdev(["/dev/input/remote"]);
+    const [reader] = helper.readers;
+
+    reader.close();
+    reader.start();
+    openCallbacks[0](null, 42);
+
+    assert.deepEqual(closedFileDescriptors, [42]);
+    assert.deepEqual(readFileDescriptors, []);
+    assert.equal(reader.fd, null);
+
+    openCallbacks[1](null, 43);
+
+    assert.deepEqual(readFileDescriptors, [43]);
+    assert.equal(reader.fd, 43);
+    reader.close();
   });
 
   test("trims paths and ignores empty or non-string entries", () => {
