@@ -11,6 +11,10 @@ function loadNodeHelper () {
   const errors = [];
   const logs = [];
   const openCallbacks = [];
+  const readCallbacks = [];
+  const accessCallbacks = [];
+  const intervalCallbacks = [];
+  const clearedIntervalIds = [];
   const closedFileDescriptors = [];
   const readFileDescriptors = [];
   const helperDefinition = {};
@@ -37,10 +41,12 @@ function loadNodeHelper () {
       closedFileDescriptors.push(fd);
       callback(null);
     },
-    read (fd) {
-      readFileDescriptors.push(fd);
+    read (...args) {
+      readFileDescriptors.push(args[0]);
+      readCallbacks.push(args[5]);
     },
-    access () {
+    access (devicePath, mode, callback) {
+      accessCallbacks.push(callback);
       return undefined;
     }
   };
@@ -67,16 +73,32 @@ function loadNodeHelper () {
 
   vm.runInNewContext(source, {
     Buffer,
-    clearInterval,
+    clearInterval (intervalId) {
+      clearedIntervalIds.push(intervalId);
+    },
     console,
     module: {exports: {}},
     process: {arch: "x64"},
     require: mockRequire,
     setImmediate,
-    setInterval
+    setInterval (callback) {
+      intervalCallbacks.push(callback);
+      return intervalCallbacks.length;
+    }
   }, {filename: sourcePath});
 
-  return {closedFileDescriptors, errors, helper: helperDefinition, logs, openCallbacks, readFileDescriptors};
+  return {
+    accessCallbacks,
+    clearedIntervalIds,
+    closedFileDescriptors,
+    errors,
+    helper: helperDefinition,
+    intervalCallbacks,
+    logs,
+    openCallbacks,
+    readCallbacks,
+    readFileDescriptors
+  };
 }
 
 function enableEvdev (eventPath) {
@@ -94,7 +116,7 @@ function createKeyEvent (code, value) {
   return buffer;
 }
 
-describe("node helper evdev configuration", () => {
+describe("node helper evdev lifecycle and configuration", () => {
   test("creates one reader for a single event path", () => {
     const {helper} = enableEvdev(["/dev/input/remote"]);
 
@@ -149,6 +171,48 @@ describe("node helper evdev configuration", () => {
     assert.deepEqual(readFileDescriptors, [43]);
     assert.equal(reader.fd, 43);
     reader.close();
+  });
+
+  test("closes the device when the reader stops", () => {
+    const {closedFileDescriptors, helper, openCallbacks, readFileDescriptors} = enableEvdev(["/dev/input/remote"]);
+    const [reader] = helper.readers;
+
+    openCallbacks[0](null, 42);
+    reader.close();
+
+    assert.equal(reader.fd, null);
+    assert.deepEqual(closedFileDescriptors, [42]);
+    assert.deepEqual(readFileDescriptors, [42]);
+  });
+
+  test("reopens a device after it becomes available", () => {
+    const {helper, intervalCallbacks, openCallbacks, readFileDescriptors, accessCallbacks} = enableEvdev(["/dev/input/remote"]);
+    const [reader] = helper.readers;
+
+    openCallbacks[0]({code: "ENOENT"});
+    intervalCallbacks[0]();
+    accessCallbacks[0](null);
+    openCallbacks[1](null, 42);
+
+    assert.equal(reader.fd, 42);
+    assert.deepEqual(readFileDescriptors, [42]);
+    reader.close();
+  });
+
+  test("does not reconnect after stopping during device disconnection", () => {
+    const {accessCallbacks, closedFileDescriptors, clearedIntervalIds, helper, intervalCallbacks, openCallbacks, readCallbacks} = enableEvdev(["/dev/input/remote"]);
+    const [reader] = helper.readers;
+
+    openCallbacks[0](null, 42);
+    readCallbacks[0]({code: "ENODEV"});
+    reader.close();
+    intervalCallbacks[0]();
+    accessCallbacks[0](null);
+
+    assert.deepEqual(closedFileDescriptors, [42]);
+    assert.deepEqual(clearedIntervalIds, [1]);
+    assert.equal(openCallbacks.length, 1);
+    assert.equal(reader.reconnectInterval, null);
   });
 
   test("trims paths and ignores empty or non-string entries", () => {
