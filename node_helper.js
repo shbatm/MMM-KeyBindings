@@ -37,7 +37,7 @@ class InputEventReader {
     this.fd = null;
     this.isRunning = false;
     this.reconnectInterval = null;
-    this.pendingKeyPress = {};
+    this.pendingKeyPress = new Map();
     this.openAttempt = 0;
 
     Log.log(`Create InputEventReader for ${devicePath}`);
@@ -147,21 +147,20 @@ class InputEventReader {
     // value: 0 = released, 1 = pressed, 2 = repeated (held/long press)
     if (value > 0) {
       // Key pressed or held
-      this.pendingKeyPress.code = code;
-      this.pendingKeyPress.keyName = keyName;
-      this.pendingKeyPress.value = value;
+      this.pendingKeyPress.set(code, {keyName, value});
     } else {
       // Key released - determine if it was a short or long press
-      if (this.pendingKeyPress.code === code) {
-        const keyState = this.pendingKeyPress.value === 2
+      const pressedKey = this.pendingKeyPress.get(code);
+      if (pressedKey) {
+        const keyState = pressedKey.value === 2
           ? "KEY_LONGPRESSED"
           : "KEY_PRESSED";
         Log.log(`${keyName} ${keyState === "KEY_LONGPRESSED"
           ? "long "
           : ""}pressed.`);
-        this.onKey(keyName, keyState);
+        this.onKey(pressedKey.keyName, keyState);
       }
-      this.pendingKeyPress = {};
+      this.pendingKeyPress.delete(code);
     }
   }
 

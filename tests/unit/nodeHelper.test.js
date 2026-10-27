@@ -86,6 +86,14 @@ function enableEvdev (eventPath) {
   return loaded;
 }
 
+function createKeyEvent (code, value) {
+  const buffer = Buffer.alloc(24);
+  buffer.writeUInt16LE(1, 16);
+  buffer.writeUInt16LE(code, 18);
+  buffer.writeInt32LE(value, 20);
+  return buffer;
+}
+
 describe("node helper evdev configuration", () => {
   test("creates one reader for a single event path", () => {
     const {helper} = enableEvdev(["/dev/input/remote"]);
@@ -103,6 +111,25 @@ describe("node helper evdev configuration", () => {
       "/dev/input/remote-keyboard",
       "/dev/input/remote-media"
     ]);
+  });
+
+  test("tracks overlapping key presses independently", () => {
+    const {helper} = enableEvdev(["/dev/input/remote"]);
+    const [reader] = helper.readers;
+    const keyPresses = [];
+    reader.onKey = (keyName, keyState) => keyPresses.push({keyName, keyState});
+
+    reader.parseEvent(createKeyEvent(105, 1));
+    reader.parseEvent(createKeyEvent(106, 1));
+    reader.parseEvent(createKeyEvent(106, 2));
+    reader.parseEvent(createKeyEvent(105, 0));
+    reader.parseEvent(createKeyEvent(106, 0));
+
+    assert.deepEqual(keyPresses, [
+      {keyName: "KEY_LEFT", keyState: "KEY_PRESSED"},
+      {keyName: "KEY_RIGHT", keyState: "KEY_LONGPRESSED"}
+    ]);
+    reader.close();
   });
 
   test("ignores a stale open after the reader stops and restarts", () => {
