@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [3.1.1](https://github.com/shbatm/MMM-KeyBindings/compare/v3.1.0...v3.1.1) (2026-10-27)
+
+### Fixed
+
+* **evdev:** close stale device opens ([162f550](https://github.com/shbatm/MMM-KeyBindings/commit/162f550177d3fd9ab9fc306fea89190352bb4390))
+* **evdev:** track keys and close stale opens ([8a9f803](https://github.com/shbatm/MMM-KeyBindings/commit/8a9f803472ff5c7f04b9ecfd68ff18dacb058cef))
+
+### Chores
+
+* update devDependencies ([b8e1ace](https://github.com/shbatm/MMM-KeyBindings/commit/b8e1ace3f6e056456003598acd11e8637c36d113))
+
+### Code Refactoring
+
+* **keybindings:** scope keyboard utilities ([7470bee](https://github.com/shbatm/MMM-KeyBindings/commit/7470beeb9837b135229e4da25b235d2e33775f32))
+
+### Tests
+
+* **evdev:** cover reader lifecycle ([7f12dfd](https://github.com/shbatm/MMM-KeyBindings/commit/7f12dfdcc86fdb9644f27df9138a62b589eaf2f4))
+
 ## [3.1.0](https://github.com/shbatm/MMM-KeyBindings/compare/v3.0.0...v3.1.0) (2026-09-23)
 
 ### Added
